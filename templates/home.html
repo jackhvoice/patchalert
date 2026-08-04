@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}PatchAlert — new local building jobs, before your competitors hear about them{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <div class="hero-copy">
+    <p class="eyebrow">For builders, extension &amp; loft conversion specialists</p>
+    <h1>Know about the job down the road — before anyone else does.</h1>
+    <p class="lede">Every new UK planning application is public record. Nobody has time to check.
+       We watch your patch and email you the moment a matching job is submitted — one simple
+       email, no dashboard, no login required.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="{{ url_for('signup') }}">Set up my free alert</a>
+      <span class="hero-note">Free while in early access · No card required</span>
+    </div>
+  </div>
+
+  <div class="hero-visual" aria-hidden="true">
+    <div class="mock-email">
+      <div class="mock-email-header">
+        <span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span>
+        <span class="mock-email-title">New message</span>
+      </div>
+      <div class="mock-email-body">
+        <p class="mock-email-subject">2 new planning applications near LS6 3EF</p>
+        <p class="mock-email-line">Hi Dave,</p>
+        <div class="mock-application">
+          <p class="mock-app-address">17 Ashfield Road, Leeds</p>
+          <p class="mock-app-desc">Rear extension &amp; loft conversion with rear dormer</p>
+        </div>
+        <div class="mock-application">
+          <p class="mock-app-address">29 Church Lane, Leeds</p>
+          <p class="mock-app-desc">Two storey side extension, garage converted to room</p>
+        </div>
+        <p class="mock-email-line muted">Reach out early — you'll usually be first to know.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="how">
+  <h2>How it works</h2>
+  <div class="how-steps">
+    <div class="how-step">
+      <div class="how-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-7.58 7-12.5A7 7 0 0 0 5 9.5C5 14.42 12 22 12 22Z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+      </div>
+      <h3>1. Pick your patch</h3>
+      <p>Your postcode and a radius. Only jobs near you, nothing else.</p>
+    </div>
+    <div class="how-step">
+      <div class="how-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.3 2.3-2-2 2.3-2.3Z"/></svg>
+      </div>
+      <h3>2. Pick your trade</h3>
+      <p>Extensions, loft conversions, garage conversions, conservatories — your call.</p>
+    </div>
+    <div class="how-step">
+      <div class="how-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+      </div>
+      <h3>3. Get the email</h3>
+      <p>Lands in your inbox like a message from a mate. No app, no login.</p>
+    </div>
+  </div>
+</section>
+
+<section class="cta-band">
+  <h2>Set up your first alert in under a minute.</h2>
+  <a class="btn btn-primary" href="{{ url_for('signup') }}">Set up my free alert</a>
+</section>
+
+{% endblock %}

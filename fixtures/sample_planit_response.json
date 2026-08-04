@@ -1,0 +1,64 @@
+{
+  "records": [
+    {
+      "uid": "2026/1043/HOU",
+      "name": "2026/1043/HOU",
+      "area_name": "Leeds",
+      "area_id": 245,
+      "start_date": "2026-08-01",
+      "address": "17 Ashfield Road, Leeds, LS6 3EF",
+      "description": "Single storey rear extension and loft conversion with rear dormer",
+      "location": {"lat": 53.8241, "lng": -1.5765},
+      "link": "https://www.planit.org.uk/planapp/2026/1043/HOU",
+      "last_scraped": "2026-08-03T06:12:00Z",
+      "app_state": "Undecided",
+      "app_type": "HOU"
+    },
+    {
+      "uid": "2026/0987/FUL",
+      "name": "2026/0987/FUL",
+      "area_name": "Leeds",
+      "area_id": 245,
+      "start_date": "2026-07-29",
+      "address": "4 Oak Close, Leeds, LS8 1QW",
+      "description": "Erection of detached garage to side of property",
+      "location": {"lat": 53.8305, "lng": -1.5502},
+      "link": "https://www.planit.org.uk/planapp/2026/0987/FUL",
+      "last_scraped": "2026-08-03T06:12:00Z",
+      "app_state": "Undecided",
+      "app_type": "FUL"
+    },
+    {
+      "uid": "2026/1011/HOU",
+      "name": "2026/1011/HOU",
+      "area_name": "Leeds",
+      "area_id": 245,
+      "start_date": "2026-07-30",
+      "address": "29 Church Lane, Leeds, LS16 7HD",
+      "description": "Two storey side extension and conversion of garage to habitable room",
+      "location": {"lat": 53.8455, "lng": -1.6102},
+      "link": "https://www.planit.org.uk/planapp/2026/1011/HOU",
+      "last_scraped": "2026-08-03T06:12:00Z",
+      "app_state": "Undecided",
+      "app_type": "HOU"
+    },
+    {
+      "uid": "2026/0899/LBC",
+      "name": "2026/0899/LBC",
+      "area_name": "Leeds",
+      "area_id": 245,
+      "start_date": "2026-07-20",
+      "address": "3 Cathedral Close, Leeds, LS2 3AA",
+      "description": "Listed building consent for internal alterations to shopfront",
+      "location": {"lat": 53.7997, "lng": -1.5437},
+      "link": "https://www.planit.org.uk/planapp/2026/0899/LBC",
+      "last_scraped": "2026-08-03T06:12:00Z",
+      "app_state": "Undecided",
+      "app_type": "LBC"
+    }
+  ],
+  "from": 0,
+  "to": 4,
+  "total": 4,
+  "secs_taken": 0.08
+}

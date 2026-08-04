@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Billing not set up yet{% endblock %}
+{% block content %}
+<h1>Billing isn't switched on yet</h1>
+<p class="muted">This prototype doesn't have live Stripe keys configured. See <code>billing.py</code>
+   for the exact steps to activate real subscriptions once you have a Stripe account.</p>
+<a class="btn" href="{{ url_for('home') }}">Back home</a>
+{% endblock %}

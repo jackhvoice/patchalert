@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Your preview alert — PatchAlert{% endblock %}
+{% block content %}
+<section class="preview-layout">
+  <div>
+    <h1>Here's what your alert looks like</h1>
+    <p class="lede small">Built live from your settings: {{ subscriber.postcode }},
+       {{ subscriber.radius_km|int }}km radius, matching "{{ subscriber.keywords }}".</p>
+
+    <div class="mock-email mock-email-full">
+      <div class="mock-email-header">
+        <span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span>
+        <span class="mock-email-title">New message</span>
+      </div>
+      <div class="mock-email-meta">
+        <p><strong>From:</strong> PatchAlert &lt;alerts@patchalert.example&gt;</p>
+        <p><strong>To:</strong> {{ subscriber.email }}</p>
+      </div>
+      <div class="mock-email-body">
+        <p class="mock-email-subject">{{ subject }}</p>
+        <pre class="mock-email-text">{{ body }}</pre>
+      </div>
+    </div>
+
+    <div class="confirm-banner">
+      <p>You're on the early access list — once alerts are running live, this lands in your
+         inbox automatically. Free during early access; pricing starts once it's out of beta.</p>
+      <a class="btn btn-secondary" href="{{ url_for('signup') }}">Adjust my settings</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Set up your alert — PatchAlert{% endblock %}
+{% block content %}
+<section class="signup-layout">
+  <div class="signup-form-col">
+    <h1>Set up your alert</h1>
+    <p class="lede small">Takes under a minute. You'll see a live preview straight away.</p>
+    <form method="post" class="form card">
+      <label>Your name
+        <input type="text" name="name" required placeholder="Dave Builder">
+      </label>
+      <label>Email
+        <input type="email" name="email" required placeholder="dave@example.com">
+      </label>
+      <label>Postcode <span class="hint">(your base, or the area you want work in)</span>
+        <input type="text" name="postcode" placeholder="e.g. LS6 3EF" required>
+      </label>
+      <label>Radius
+        <div class="range-row">
+          <input type="range" name="radius_km" value="5" min="1" max="30" step="1" oninput="this.nextElementSibling.textContent = this.value + ' km'">
+          <span class="range-value">5 km</span>
+        </div>
+      </label>
+      <fieldset>
+        <legend>What kind of jobs are you after?</legend>
+        <div class="checkbox-grid">
+          {% for label in trade_presets.keys() %}
+            <label class="checkbox-pill">
+              <input type="checkbox" name="trades" value="{{ label }}"> {{ label }}
+            </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <label>Anything else? <span class="hint">(optional, comma separated)</span>
+        <input type="text" name="custom_keywords" placeholder="e.g. driveway, patio">
+      </label>
+      <button class="btn btn-primary btn-block" type="submit">Show me a preview</button>
+    </form>
+  </div>
+
+  <aside class="signup-side">
+    <div class="side-card">
+      <h3>What happens next</h3>
+      <ol class="side-steps">
+        <li>You'll see exactly what your alert email would look like, right away.</li>
+        <li>You're added to the free early-access list — no card, no commitment.</li>
+        <li>Once alerts are running live, matching applications land straight in your inbox.</li>
+      </ol>
+    </div>
+    <div class="side-card muted-card">
+      <p>Planning applications are public record. We just save you checking every council
+         site yourself.</p>
+    </div>
+  </aside>
+</section>
+{% endblock %}
