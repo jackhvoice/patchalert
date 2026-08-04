@@ -52,13 +52,19 @@ def signup():
         radius_km = float(request.form.get("radius_km") or 3.0)
 
         # Keep this fast for an anonymous visitor who hasn't given us an
-        # email yet: search a small capped area/window rather than their
-        # full requested radius/7 days. PlanIt's own docs note a full-scope
-        # search can legitimately take up to ~45s (confirmed in
-        # production) — far too slow for a first-touch page load, and
-        # there's no email on file yet to follow up with if it hangs.
+        # email yet: cap the search AREA rather than their full requested
+        # radius (a live production test showed a 5km/30-day search taking
+        # 36s — too slow for a first-touch page load with no email on file
+        # to follow up with if it hangs). The lookback window is widened to
+        # 30 days on purpose: a narrow window kept showing "no results" for
+        # genuinely active areas, which undermines the whole point of
+        # proving PatchAlert works before asking for an email. This
+        # specific radius/day combo (3km/10 days) hasn't been directly
+        # timed in production — if it turns out slow, dial sample_radius
+        # down further (not the day count, which is what fixes the "no
+        # results" problem) before reverting this.
         sample_radius = min(radius_km, 3.0)
-        sample_days = 3
+        sample_days = 10
         records = None
         try:
             records = fetch_applications(
