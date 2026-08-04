@@ -59,7 +59,7 @@ def preview(subscriber_id):
     if not subscriber:
         return "Not found", 404
     try:
-        subject, body, new_records = build_digest_for_subscriber(subscriber)
+        subject, body, new_records = build_digest_for_subscriber(subscriber, preview=True)
     except requests_lib.exceptions.RequestException:
         # PlanIt is unreachable, slow, or returned an error — don't show a
         # bare 500 page to a real visitor. Log the full error for us to
