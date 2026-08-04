@@ -186,6 +186,10 @@ fieldset legend { font-size: 0.9rem; font-weight: 600; color: var(--navy-dark); 
 }
 .confirm-banner p { margin: 0; color: var(--navy-dark); font-size: 0.94rem; max-width: 420px; }
 
+/* ---------- Results page (search-first flow) ---------- */
+.results-list { display: flex; flex-direction: column; gap: 0.6rem; margin: 1.2rem 0; }
+.subscribe-card { margin-top: 1.5rem; max-width: 420px; }
+
 /* ---------- Responsive ---------- */
 @media (max-width: 820px) {
   .topbar { padding: 1rem 1.3rem; }
