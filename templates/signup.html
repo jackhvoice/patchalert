@@ -1,17 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Set up your alert — PatchAlert{% endblock %}
+{% block title %}Search planning alerts — PatchAlert{% endblock %}
 {% block content %}
 <section class="signup-layout">
   <div class="signup-form-col">
-    <h1>Set up your alert</h1>
-    <p class="lede small">Takes under a minute. You'll see a live preview straight away.</p>
+    <h1>See what's happening near you</h1>
+    <p class="lede small">Takes 10 seconds — no email needed to see real results.</p>
     <form method="post" class="form card">
-      <label>Your name
-        <input type="text" name="name" required placeholder="Dave Builder">
-      </label>
-      <label>Email
-        <input type="email" name="email" required placeholder="dave@example.com">
-      </label>
       <label>Postcode <span class="hint">(your base, or the area you want work in)</span>
         <input type="text" name="postcode" placeholder="e.g. LS6 3EF" required>
       </label>
@@ -34,7 +28,7 @@
       <label>Anything else? <span class="hint">(optional, comma separated)</span>
         <input type="text" name="custom_keywords" placeholder="e.g. driveway, patio">
       </label>
-      <button class="btn btn-primary btn-block" type="submit">Show me a preview</button>
+      <button class="btn btn-primary btn-block" type="submit">Show me what's near me</button>
     </form>
   </div>
 
@@ -42,8 +36,8 @@
     <div class="side-card">
       <h3>What happens next</h3>
       <ol class="side-steps">
-        <li>You'll see exactly what your alert email would look like, right away.</li>
-        <li>You're added to the free early-access list — no card, no commitment.</li>
+        <li>You'll see real planning applications matching your search, right away.</li>
+        <li>Like what you see? Enter your email to get this delivered daily — free during early access.</li>
         <li>Once alerts are running live, matching applications land straight in your inbox.</li>
       </ol>
     </div>
