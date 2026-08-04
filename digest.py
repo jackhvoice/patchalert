@@ -22,19 +22,28 @@ OUTBOX_DIR.mkdir(exist_ok=True)
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
 RESEND_FROM_ADDRESS = os.environ.get("RESEND_FROM_ADDRESS", "alerts@yourdomain.example")
 
+# Used only for the post-signup preview (preview=True): escalate through
+# progressively wider searches until something real is found, the same way
+# the anonymous pre-signup search page does in app.py. Without this, someone
+# could see real matches on the search page, sign up, and then immediately
+# see "no results" on the very next page — a confusing regression right at
+# the conversion moment. The real (non-preview) daily digest doesn't need
+# this: "nothing new today" is a normal, expected outcome for an ongoing
+# subscriber, not a make-or-break first impression.
+PREVIEW_SEARCH_TIERS = [
+    (3.0, 3, True),
+    (3.0, 90, True),
+    (5.0, 90, True),
+    (5.0, 90, False),
+]
+
 
 def build_digest_for_subscriber(subscriber: dict, preview: bool = False) -> tuple[str, str, list[dict]]:
     """
     Returns (subject, body_text, new_records) for one subscriber.
 
-    When preview=True (the live "show me a preview" page a visitor waits on
-    in their browser right after signing up), we deliberately search a
-    smaller area and a shorter window than their real saved alert. PlanIt's
-    API takes longer to answer the bigger the search radius and lookback
-    are — a real subscriber's daily digest email runs later in the
-    background where nobody is watching a loading spinner, but the
-    interactive preview page has someone waiting right now, so we keep
-    that one fast rather than risk another timeout.
+    When preview=True, this escalates through PREVIEW_SEARCH_TIERS above
+    rather than a single fixed search — see that constant's comment for why.
 
     The real (non-preview) lookback window is much wider than 7 days on
     purpose. Production testing showed PlanIt's `recent` parameter filters
@@ -46,20 +55,55 @@ def build_digest_for_subscriber(subscriber: dict, preview: bool = False) -> tupl
     duplicate/spammy emails, since already_sent() below still only reports
     applications this subscriber hasn't already been sent.
     """
-    effective_radius = min(subscriber["radius_km"], 3.0) if preview else subscriber["radius_km"]
-    effective_days = 3 if preview else 90
-    records = fetch_applications(
-        postcode=subscriber["postcode"],
-        radius_km=effective_radius,
-        keywords=subscriber["keywords"],
-        recent_days=effective_days,
-    )
+    if preview:
+        records = []
+        matched_keywords = True
+        effective_radius = effective_days = None
+        for radius_cap, days, use_keywords in PREVIEW_SEARCH_TIERS:
+            effective_radius = min(subscriber["radius_km"], radius_cap)
+            effective_days = days
+            matched_keywords = use_keywords
+            result = fetch_applications(
+                postcode=subscriber["postcode"],
+                radius_km=effective_radius,
+                keywords=subscriber["keywords"] if use_keywords else None,
+                recent_days=effective_days,
+            )
+            if result:
+                records = result
+                break
+    else:
+        effective_radius = subscriber["radius_km"]
+        effective_days = 90
+        matched_keywords = True
+        records = fetch_applications(
+            postcode=subscriber["postcode"],
+            radius_km=effective_radius,
+            keywords=subscriber["keywords"],
+            recent_days=effective_days,
+        )
+
     new_records = [r for r in records if not db.already_sent(subscriber["id"], r["uid"])]
-    scope_note = (
-        f" (a quick {effective_radius:.0f}km/{effective_days}-day taster for speed — your "
-        f"real alert will cover the full {subscriber['radius_km']:.0f}km and 7 days)"
-        if preview else ""
-    )
+
+    if preview and not new_records:
+        scope_note = (
+            f" — we checked as wide as {effective_radius:.0f}km over the last {effective_days} "
+            "days and found nothing at all, so this looks like a genuinely quiet patch right now"
+        )
+    elif preview and not matched_keywords:
+        scope_note = (
+            f" — nothing matched '{subscriber['keywords']}' specifically, so this shows general "
+            f"nearby activity within {effective_radius:.0f}km/{effective_days} days instead; your "
+            f"real alert will keep watching specifically for '{subscriber['keywords']}' at your "
+            f"full {subscriber['radius_km']:.0f}km radius"
+        )
+    elif preview:
+        scope_note = (
+            f" (a quick {effective_radius:.0f}km/{effective_days}-day taster for speed — your "
+            f"real alert will cover the full {subscriber['radius_km']:.0f}km and 7 days)"
+        )
+    else:
+        scope_note = ""
 
     if not new_records:
         subject = f"No new matching planning applications near {subscriber['postcode']} today"
