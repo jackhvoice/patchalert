@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Results near {{ postcode }} — PatchAlert{% endblock %}
+{% block content %}
+<section class="preview-layout">
+  <h1>Here's what's happening near {{ postcode }}</h1>
+
+  {% if records is none %}
+    <p class="lede small">We couldn't fetch live results just now — the planning-data source
+       didn't respond in time. This is usually temporary. You can
+       <a href="{{ url_for('signup') }}">try your search again</a>, or just sign up below and
+       we'll keep watching for you regardless.</p>
+  {% elif records %}
+    <p class="lede small">A quick {{ sample_radius|int }}km/{{ sample_days }}-day sample matching
+       "{{ keywords }}" — your daily alert will search the full {{ radius_km|int }}km and 7 days.</p>
+    <div class="results-list">
+      {% for r in records %}
+        <div class="mock-application">
+          <p class="mock-app-address">{{ r.address }}</p>
+          <p class="mock-app-desc">{{ r.description }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="lede small">No matches in a quick {{ sample_radius|int }}km/{{ sample_days }}-day
+       sample search for "{{ keywords }}" — but your daily alert will search the full
+       {{ radius_km|int }}km and 7 days, and we'll email you the moment something matches.</p>
+  {% endif %}
+
+  <div class="card subscribe-card">
+    <h3>Get this delivered daily</h3>
+    <form method="post" action="{{ url_for('subscribe') }}" class="form">
+      <input type="hidden" name="postcode" value="{{ postcode }}">
+      <input type="hidden" name="radius_km" value="{{ radius_km }}">
+      <input type="hidden" name="keywords" value="{{ keywords }}">
+      <label>Your name
+        <input type="text" name="name" required placeholder="Dave Builder">
+      </label>
+      <label>Email
+        <input type="email" name="email" required placeholder="dave@example.com">
+      </label>
+      <button class="btn btn-primary btn-block" type="submit">Email me these + future matches</button>
+    </form>
+  </div>
+
+  <p class="lede small" style="margin-top: 1rem;">
+    <a href="{{ url_for('signup') }}">Search a different postcode or trade</a>
+  </p>
+</section>
+{% endblock %}
