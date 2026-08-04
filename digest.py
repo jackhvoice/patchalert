@@ -23,13 +23,27 @@ RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
 RESEND_FROM_ADDRESS = os.environ.get("RESEND_FROM_ADDRESS", "alerts@yourdomain.example")
 
 
-def build_digest_for_subscriber(subscriber: dict) -> tuple[str, str, list[dict]]:
-    """Returns (subject, body_text, new_records) for one subscriber."""
+def build_digest_for_subscriber(subscriber: dict, preview: bool = False) -> tuple[str, str, list[dict]]:
+    """
+    Returns (subject, body_text, new_records) for one subscriber.
+
+    When preview=True (the live "show me a preview" page a visitor waits on
+    in their browser right after signing up), we deliberately search a
+    smaller area and a shorter window than their real saved alert. PlanIt's
+    API takes longer to answer the bigger the search radius and lookback
+    are — a real subscriber's daily digest email runs later in the
+    background where nobody is watching a loading spinner, but the
+    interactive preview page has someone waiting right now, so we keep
+    that one fast rather than risk another timeout.
+    """
+    effective_radius = min(subscriber["radius_km"], 3.0) if preview else subscriber["radius_km"]
+    effective_days = 3 if preview else 7
     records = fetch_applications(
         postcode=subscriber["postcode"],
-        radius_km=subscriber["radius_km"],
+        radius_km=effective_radius,
         keywords=subscriber["keywords"],
-        recent_days=7,
+        recent_days=effective_days,
+    )
     )
     new_records = [r for r in records if not db.already_sent(subscriber["id"], r["uid"])]
 
