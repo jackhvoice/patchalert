@@ -51,30 +51,53 @@ def signup():
         postcode = request.form["postcode"].strip().upper()
         radius_km = float(request.form.get("radius_km") or 3.0)
 
-        # Keep this fast for an anonymous visitor who hasn't given us an
-        # email yet: cap the search AREA rather than their full requested
-        # radius (a live production test showed a 5km/30-day search taking
-        # 36s — too slow for a first-touch page load with no email on file
-        # to follow up with if it hangs). The lookback window is widened to
-        # 30 days on purpose: a narrow window kept showing "no results" for
-        # genuinely active areas, which undermines the whole point of
-        # proving PatchAlert works before asking for an email. This
-        # specific radius/day combo (3km/10 days) hasn't been directly
-        # timed in production — if it turns out slow, dial sample_radius
-        # down further (not the day count, which is what fixes the "no
-        # results" problem) before reverting this.
-        sample_radius = min(radius_km, 3.0)
-        sample_days = 10
+        # Escalating search: try a fast, narrow, keyword-matched search
+        # first, and only widen if it comes back empty. This matters for
+        # conversion — showing "no results" on someone's very first touch
+        # with PatchAlert, before they've given us an email, undermines the
+        # whole point of proving the product works. Production testing
+        # showed empty searches resolve fast regardless of area/day size
+        # (a 5km/90-day search with zero matches took under half a second),
+        # while searches that find a lot of matches are what's slow — so
+        # each escalation step here is cheap unless it actually finds
+        # something, and we stop at the first tier that does.
+        #   1. their keywords, capped 3km, 10 days — the common case
+        #   2. their keywords, capped 3km, 90 days — catches applications
+        #      submitted a while ago but still genuinely relevant (PlanIt's
+        #      "recent" filters by original submission date, not by status
+        #      changes — confirmed in production)
+        #   3. their keywords, capped 5km, 90 days — widen the area too
+        #   4. ANY recent local planning activity, no keyword filter — last
+        #      resort proof that real data exists nearby, even if nothing
+        #      matched their specific trade recently
+        ESCALATION_TIERS = [
+            (3.0, 10, True),
+            (3.0, 90, True),
+            (5.0, 90, True),
+            (5.0, 90, False),
+        ]
         records = None
-        try:
-            records = fetch_applications(
-                postcode=postcode,
-                radius_km=sample_radius,
-                keywords=keywords,
-                recent_days=sample_days,
-            )
-        except requests_lib.exceptions.RequestException:
-            logger.exception("Failed to fetch sample planning applications for anonymous search")
+        matched_keywords = True
+        sample_radius = sample_days = None
+        for radius_cap, days, use_keywords in ESCALATION_TIERS:
+            sample_radius = min(radius_km, radius_cap)
+            sample_days = days
+            matched_keywords = use_keywords
+            try:
+                result = fetch_applications(
+                    postcode=postcode,
+                    radius_km=sample_radius,
+                    keywords=keywords if use_keywords else None,
+                    recent_days=sample_days,
+                )
+            except requests_lib.exceptions.RequestException:
+                logger.exception("Failed to fetch sample planning applications for anonymous search")
+                records = None
+                break
+            if result:
+                records = result
+                break
+            records = []  # keep the most recent (widest) empty attempt's scope for messaging
 
         return render_template(
             "results.html",
@@ -83,6 +106,7 @@ def signup():
             keywords=keywords,
             sample_radius=sample_radius,
             sample_days=sample_days,
+            matched_keywords=matched_keywords,
             records=records,
         )
     return render_template("signup.html", trade_presets=TRADE_PRESETS)
