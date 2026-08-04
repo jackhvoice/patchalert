@@ -1,10 +1,14 @@
+import logging
 import os
 
+import requests as requests_lib
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 
 import db
 from digest import build_digest_for_subscriber, run_daily_digest
 from billing import create_checkout_session
+
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 db.init_db()
@@ -54,7 +58,14 @@ def preview(subscriber_id):
     subscriber = db.get_subscriber(subscriber_id)
     if not subscriber:
         return "Not found", 404
-    subject, body, new_records = build_digest_for_subscriber(subscriber)
+    try:
+        subject, body, new_records = build_digest_for_subscriber(subscriber)
+    except requests_lib.exceptions.RequestException:
+        # PlanIt is unreachable, slow, or returned an error — don't show a
+        # bare 500 page to a real visitor. Log the full error for us to
+        # see in Render's logs, and show a friendly holding message.
+        logger.exception("Failed to fetch planning applications for preview")
+        return render_template("preview_error.html", subscriber=subscriber), 502
     return render_template(
         "preview.html", subscriber=subscriber, subject=subject, body=body, records=new_records
     )
