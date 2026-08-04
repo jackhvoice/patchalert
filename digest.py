@@ -35,9 +35,19 @@ def build_digest_for_subscriber(subscriber: dict, preview: bool = False) -> tupl
     background where nobody is watching a loading spinner, but the
     interactive preview page has someone waiting right now, so we keep
     that one fast rather than risk another timeout.
+
+    The real (non-preview) lookback window is much wider than 7 days on
+    purpose. Production testing showed PlanIt's `recent` parameter filters
+    by original submission date, not by when an application last changed
+    status — so a genuinely live lead (e.g. an application that just got
+    decided today, arguably the best moment to reach out) is invisible to
+    any digest whose window is narrower than how long ago that application
+    was first submitted. A 90-day window catches these without any risk of
+    duplicate/spammy emails, since already_sent() below still only reports
+    applications this subscriber hasn't already been sent.
     """
     effective_radius = min(subscriber["radius_km"], 3.0) if preview else subscriber["radius_km"]
-    effective_days = 3 if preview else 7
+    effective_days = 3 if preview else 90
     records = fetch_applications(
         postcode=subscriber["postcode"],
         radius_km=effective_radius,
