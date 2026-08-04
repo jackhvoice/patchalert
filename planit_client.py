@@ -122,7 +122,14 @@ def fetch_applications(
         "User-Agent": "PatchAlertBot/1.0 (+https://patchalert.onrender.com)",
         "Accept": "application/json",
     }
-    resp = requests.get(API_BASE, params=params, headers=headers, timeout=25)
+    # PlanIt's own docs note queries can legitimately take up to ~45s before
+    # PlanIt itself errors out (confirmed in production: a broad lat/lng
+    # search took 36s). Nobody is watching a live spinner for the background
+    # daily digest job, so it's better to wait it out than give up early —
+    # the preview page stays fast by searching a much smaller area/window
+    # (see build_digest_for_subscriber's preview flag in digest.py), not by
+    # cutting this timeout short.
+    resp = requests.get(API_BASE, params=params, headers=headers, timeout=55)
     try:
         resp.raise_for_status()
     except requests.exceptions.HTTPError as exc:
