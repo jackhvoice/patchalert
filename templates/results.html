@@ -10,8 +10,15 @@
        <a href="{{ url_for('signup') }}">try your search again</a>, or just sign up below and
        we'll keep watching for you regardless.</p>
   {% elif records %}
-    <p class="lede small">A quick {{ sample_radius|int }}km/{{ sample_days }}-day sample matching
-       "{{ keywords }}" — your daily alert will search the full {{ radius_km|int }}km and 7 days.</p>
+    {% if matched_keywords %}
+      <p class="lede small">A quick {{ sample_radius|int }}km/{{ sample_days }}-day sample matching
+         "{{ keywords }}" — your daily alert will search the full {{ radius_km|int }}km and 7 days.</p>
+    {% else %}
+      <p class="lede small">Nothing matched "{{ keywords }}" specifically nearby recently, but here's
+         real planning activity within {{ sample_radius|int }}km in the last {{ sample_days }} days —
+         proof there's genuine data flowing for your area. Your daily alert will keep watching
+         specifically for "{{ keywords }}" at your full {{ radius_km|int }}km radius.</p>
+    {% endif %}
     <div class="results-list">
       {% for r in records %}
         <div class="mock-application">
@@ -21,8 +28,9 @@
       {% endfor %}
     </div>
   {% else %}
-    <p class="lede small">No matches in a quick {{ sample_radius|int }}km/{{ sample_days }}-day
-       sample search for "{{ keywords }}" — but your daily alert will search the full
+    <p class="lede small">No matches for "{{ keywords }}" within {{ sample_radius|int }}km in the
+       last {{ sample_days }} days — and no other recent planning activity nearby either, so this
+       looks like a genuinely quiet patch right now. Your daily alert will keep watching the full
        {{ radius_km|int }}km and 7 days, and we'll email you the moment something matches.</p>
   {% endif %}
 
