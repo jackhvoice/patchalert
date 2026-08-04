@@ -35,4 +35,54 @@
   <aside class="signup-side">
     <div class="side-card">
       <h3>What happens next</h3>
-      <ol
+      <ol class="side-steps">
+        <li>You'll see real planning applications matching your search, right away.</li>
+        <li>Like what you see? Enter your email to get this delivered daily — free during early access.</li>
+        <li>Once alerts are running live, matching applications land straight in your inbox.</li>
+      </ol>
+    </div>
+    <div class="side-card muted-card">
+      <p>Planning applications are public record. We just save you checking every council
+         site yourself.</p>
+    </div>
+  </aside>
+</section>
+
+<div id="search-progress-overlay" class="search-progress-overlay" aria-live="polite">
+  <div class="search-spinner" aria-hidden="true"></div>
+  <p class="search-progress-text" id="search-progress-text">Checking planning applications near you…</p>
+</div>
+
+<script>
+  (function () {
+    // Purely a perceived-progress indicator: the real search runs as one
+    // server round-trip (see app.py's escalating search), so this can't
+    // report exact live steps — but it mirrors the real escalation order
+    // (narrow search first, widening only if needed) so it stays honest
+    // in spirit, and it keeps someone waiting a few seconds from wondering
+    // if the page has stalled.
+    var form = document.querySelector(".signup-form-col form");
+    var overlay = document.getElementById("search-progress-overlay");
+    var textEl = document.getElementById("search-progress-text");
+    var messages = [
+      "Checking planning applications near you…",
+      "Looking at the last few days…",
+      "Widening the search a little…",
+      "Checking a bit further back…",
+      "Almost there…"
+    ];
+    if (!form || !overlay || !textEl) return;
+    form.addEventListener("submit", function () {
+      overlay.classList.add("active");
+      var i = 0;
+      setInterval(function () {
+        i = (i + 1) % messages.length;
+        textEl.textContent = messages[i];
+      }, 1400);
+      // No preventDefault() — the form submits normally right after this;
+      // the overlay just stays visible on screen until the results page
+      // finishes loading and replaces it.
+    });
+  })();
+</script>
+{% endblock %}
