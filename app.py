@@ -6,6 +6,7 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify
 
 import db
 from digest import build_digest_for_subscriber, run_daily_digest
+from planit_client import fetch_applications
 from billing import create_checkout_session
 
 logger = logging.getLogger(__name__)
@@ -31,6 +32,13 @@ def home():
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
+    """
+    Step 1 of signup: search first, no email required. A visitor enters
+    their postcode/radius/trade and immediately sees real matching planning
+    applications, before we ever ask for an email — much stronger proof the
+    product works than asking them to take it on faith. Step 2 (capturing
+    name/email) happens in subscribe() below, once they've seen results.
+    """
     if request.method == "POST":
         selected = request.form.getlist("trades")
         custom = request.form.get("custom_keywords", "").strip()
@@ -40,17 +48,53 @@ def signup():
         if custom:
             keyword_terms.append(custom)
         keywords = ",".join(keyword_terms) if keyword_terms else "extension"
+        postcode = request.form["postcode"].strip().upper()
+        radius_km = float(request.form.get("radius_km") or 3.0)
 
-        data = {
-            "name": request.form["name"].strip(),
-            "email": request.form["email"].strip().lower(),
-            "postcode": request.form["postcode"].strip().upper(),
-            "radius_km": float(request.form.get("radius_km") or 3.0),
-            "keywords": keywords,
-        }
-        subscriber_id = db.add_subscriber(data)
-        return redirect(url_for("preview", subscriber_id=subscriber_id))
+        # Keep this fast for an anonymous visitor who hasn't given us an
+        # email yet: search a small capped area/window rather than their
+        # full requested radius/7 days. PlanIt's own docs note a full-scope
+        # search can legitimately take up to ~45s (confirmed in
+        # production) — far too slow for a first-touch page load, and
+        # there's no email on file yet to follow up with if it hangs.
+        sample_radius = min(radius_km, 3.0)
+        sample_days = 3
+        records = None
+        try:
+            records = fetch_applications(
+                postcode=postcode,
+                radius_km=sample_radius,
+                keywords=keywords,
+                recent_days=sample_days,
+            )
+        except requests_lib.exceptions.RequestException:
+            logger.exception("Failed to fetch sample planning applications for anonymous search")
+
+        return render_template(
+            "results.html",
+            postcode=postcode,
+            radius_km=radius_km,
+            keywords=keywords,
+            sample_radius=sample_radius,
+            sample_days=sample_days,
+            records=records,
+        )
     return render_template("signup.html", trade_presets=TRADE_PRESETS)
+
+
+@app.route("/subscribe", methods=["POST"])
+def subscribe():
+    """Step 2 of signup: after seeing real results, capture name/email and
+    save the search they already saw as their ongoing daily alert."""
+    data = {
+        "name": request.form["name"].strip(),
+        "email": request.form["email"].strip().lower(),
+        "postcode": request.form["postcode"].strip().upper(),
+        "radius_km": float(request.form.get("radius_km") or 3.0),
+        "keywords": request.form.get("keywords") or "extension",
+    }
+    subscriber_id = db.add_subscriber(data)
+    return redirect(url_for("preview", subscriber_id=subscriber_id))
 
 
 @app.route("/preview/<int:subscriber_id>")
