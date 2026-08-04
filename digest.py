@@ -3,7 +3,7 @@ Builds and "sends" digest emails for subscribers. Sending is stubbed out in
 this prototype (writes to an outbox/ folder instead of a real SMTP/email
 API call) so the whole pipeline can be demonstrated without needing real
 credentials. Swap `send_email()` for a call to Postmark, SendGrid, AWS SES,
-or similar before going live - the rest of the pipeline does not need to
+or similar before going live — the rest of the pipeline does not need to
 change.
 """
 
@@ -44,7 +44,6 @@ def build_digest_for_subscriber(subscriber: dict, preview: bool = False) -> tupl
         keywords=subscriber["keywords"],
         recent_days=effective_days,
     )
-    )
     new_records = [r for r in records if not db.already_sent(subscriber["id"], r["uid"])]
 
     if not new_records:
@@ -70,7 +69,7 @@ def build_digest_for_subscriber(subscriber: dict, preview: bool = False) -> tupl
         lines.append(f"  Reference: {r['uid']}  |  Submitted: {r['start_date']}")
         lines.append(f"  Details: {r['link']}")
         lines.append("")
-    lines.append("Reach out early - you'll usually be first to know before local competitors.")
+    lines.append("Reach out early — you'll usually be first to know before local competitors.")
 
     subject = f"{len(new_records)} new planning application(s) near {subscriber['postcode']}"
     body = "\n".join(lines)
@@ -79,7 +78,7 @@ def build_digest_for_subscriber(subscriber: dict, preview: bool = False) -> tupl
 
 def send_email(to_email: str, subject: str, body: str):
     """
-    Sends via the Resend API (https://resend.com - simple REST API, easy
+    Sends via the Resend API (https://resend.com — simple REST API, easy
     free tier) if RESEND_API_KEY is set. Otherwise falls back to writing
     the 'email' to disk under outbox/ so the whole pipeline stays
     demonstrable and testable without real credentials.
@@ -112,7 +111,7 @@ def send_email(to_email: str, subject: str, body: str):
 def run_daily_digest() -> list[dict]:
     """
     This is what a scheduled daily job runs: for every subscriber, build
-    their digest, send it (really, via Resend, if RESEND_API_KEY is set -
+    their digest, send it (really, via Resend, if RESEND_API_KEY is set —
     otherwise to outbox/ as a stand-in), and mark matched applications as
     sent so they aren't repeated tomorrow. Returns a summary for logging.
     """
@@ -129,6 +128,8 @@ def run_daily_digest() -> list[dict]:
                 "send_result": send_result,
             })
         except Exception as exc:
+            # One subscriber's failure (bad postcode, PlanIt hiccup, etc.)
+            # shouldn't stop everyone else's digest from going out.
             summary.append({
                 "subscriber": subscriber["email"],
                 "new_matches": 0,
