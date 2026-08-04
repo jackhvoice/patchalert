@@ -1,0 +1,28 @@
+name: Trigger daily PatchAlert digest
+
+# Runs once a day and calls the deployed app's /run-digest endpoint.
+# Uses GitHub Actions' free scheduled workflows so you don't need a
+# separate cron service account.
+#
+# Setup (two things to add in GitHub, no code changes needed):
+#   1. In your repo: Settings -> Secrets and variables -> Actions -> New
+#      repository secret. Add DIGEST_TRIGGER_SECRET with the same random
+#      value you set on Render, and APP_URL with your deployed app's URL
+#      (e.g. https://patchalert.onrender.com).
+#   2. That's it — this workflow runs automatically on the schedule below.
+#
+# Note: GitHub's schedule times are UTC and are "best effort" — actual
+# run time can drift a few minutes, which doesn't matter for a daily digest.
+
+on:
+  schedule:
+    - cron: "0 7 * * *"   # 07:00 UTC daily — adjust to suit your audience
+  workflow_dispatch: {}    # lets you also trigger it manually from the Actions tab
+
+jobs:
+  trigger-digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call the digest endpoint
+        run: |
+          curl -sf "${{ secrets.APP_URL }}/run-digest?token=${{ secrets.DIGEST_TRIGGER_SECRET }}"
