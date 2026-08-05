@@ -76,6 +76,29 @@ def _parse_sizes(sizes_value) -> set | None:
     return parsed or None
 
 
+def _format_keywords(keywords: str, max_shown: int = 3) -> str:
+    """Turns the raw comma-separated keywords string someone typed on the
+    signup form (e.g. 'extension,rear extension,side extension,two storey,
+    single storey,dormer,rear addition') into a short, natural-sounding
+    phrase for use inside an email, instead of dumping the entire raw list
+    verbatim — which reads as cluttered/technical once someone has more than
+    a couple of keywords. This only affects displayed text; the actual
+    search still checks every keyword regardless of how many are shown
+    here."""
+    parts = [k.strip() for k in (keywords or "").split(",") if k.strip()]
+    if not parts:
+        return keywords or ""
+    if len(parts) == 1:
+        return parts[0]
+    if len(parts) == 2:
+        return f"{parts[0]} or {parts[1]}"
+    if len(parts) <= max_shown:
+        return ", ".join(parts[:-1]) + f", or {parts[-1]}"
+    shown = ", ".join(parts[:max_shown])
+    remaining = len(parts) - max_shown
+    return f"{shown}, or {remaining} other keyword{'s' if remaining != 1 else ''} you're watching for"
+
+
 def _url(path: str) -> str:
     """Builds an absolute link for use inside an email. APP_URL is the same
     variable already used by the GitHub Actions daily-digest trigger, so no
@@ -385,10 +408,10 @@ def build_digest_for_subscriber(subscriber: dict, preview: bool = False) -> tupl
         )
     elif preview and not matched_keywords:
         scope_note = (
-            f" — nothing matched '{subscriber['keywords']}' specifically, so this shows general "
-            f"nearby activity within {effective_radius:.0f}km/{effective_days} days instead; your "
-            f"real alert will keep watching specifically for '{subscriber['keywords']}' at your "
-            f"full {subscriber['radius_km']:.0f}km radius"
+            f" — nothing matched {_format_keywords(subscriber['keywords'])} specifically, so this "
+            f"shows general nearby activity within {effective_radius:.0f}km/{effective_days} days "
+            f"instead; your real alert will keep watching specifically for what you searched for at "
+            f"your full {subscriber['radius_km']:.0f}km radius"
         )
     elif preview:
         scope_note = (
@@ -409,8 +432,8 @@ def build_digest_for_subscriber(subscriber: dict, preview: bool = False) -> tupl
         else:
             subject = f"No new matching planning applications near {subscriber['postcode']} today"
             message = (
-                f"No new planning applications matching '{subscriber['keywords']}' within "
-                f"{effective_radius:.0f}km of {subscriber['postcode']} since your last alert"
+                f"No new planning applications matching {_format_keywords(subscriber['keywords'])} "
+                f"within {effective_radius:.0f}km of {subscriber['postcode']} since your last alert"
                 f"{scope_note}."
             )
         body = f"Hi {subscriber['name']},\n\n{message}\n\nWe'll keep watching and email you as soon as something new comes up."
@@ -450,9 +473,9 @@ def build_digest_for_subscriber(subscriber: dict, preview: bool = False) -> tupl
             rest_heading = f"{len(rest)} new planning application(s) across your watched patches:"
         else:
             rest_heading = (
-                f"{len(rest)} new planning application(s) matching your alert "
-                f"('{subscriber['keywords']}' within {effective_radius:.0f}km of "
-                f"{subscriber['postcode']}){scope_note}:"
+                f"{len(rest)} new planning application(s) matching {_format_keywords(subscriber['keywords'])} "
+                f"within {effective_radius:.0f}km of "
+                f"{subscriber['postcode']}{scope_note}:"
             )
         lines.append(rest_heading)
         lines.append("")
