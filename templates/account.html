@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Your account — PatchAlert{% endblock %}
+{% block robots_meta %}noindex, nofollow{% endblock %}
 {% block content %}
 <section class="preview-layout">
   <h1>Your account</h1>
@@ -74,4 +75,24 @@
           <input type="text" name="phone" value="{{ subscriber.phone or '' }}" placeholder="07700 900123">
         </label>
         <label class="checkbox-pill" style="width: fit-content;">
-          <input type="checkbox" name="sms_opt_in" {% if subscriber.sms_opt_in == '1'
+          <input type="checkbox" name="sms_opt_in" {% if subscriber.sms_opt_in == '1' %}checked{% endif %}>
+          Text me the same day an application near me gets approved
+        </label>
+        <button class="btn btn-primary" type="submit">Save</button>
+        <p class="hint" style="margin: 0;">This piggybacks on the once-daily digest job, so it's a same-day
+           text alongside your email, not instant to the minute — but a text tends to get seen faster
+           than an inbox you don't check all day.</p>
+      </form>
+    </div>
+  {% else %}
+    <p class="lede small">Text alerts for newly-approved applications are a Pro feature —
+       <a href="{{ url_for('upgrade', subscriber_id=subscriber.id) }}?plan=pro">upgrade to Pro</a> to turn this on.</p>
+  {% endif %}
+
+  <p class="lede small" style="margin-top: 1.5rem;">
+    <a href="{{ url_for('leads', token=subscriber.access_token) }}">Your leads</a> ·
+    <a href="{{ url_for('signup') }}">Adjust your main search</a> ·
+    <a href="{{ url_for('unsubscribe', token=subscriber.access_token) }}">Unsubscribe</a>
+  </p>
+</section>
+{% endblock %}
