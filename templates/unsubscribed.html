@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Unsubscribed — PatchAlert{% endblock %}
+{% block content %}
+<section class="preview-layout">
+  {% if ok %}
+    <h1>You're unsubscribed</h1>
+    <p class="lede small">You won't receive any further PatchAlert emails. If that was a mistake,
+       just sign up again any time.</p>
+  {% else %}
+    <h1>We couldn't find that subscription</h1>
+    <p class="lede small">This link may have already been used, or may be out of date. If you're
+       still receiving emails you'd like to stop, get in touch and we'll sort it manually.</p>
+  {% endif %}
+  <a class="btn btn-secondary" href="{{ url_for('home') }}">Back home</a>
+</section>
+{% endblock %}
