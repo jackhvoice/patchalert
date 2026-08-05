@@ -27,6 +27,14 @@
          inbox automatically. Free during early access; pricing starts once it's out of beta.</p>
       <a class="btn btn-secondary" href="{{ url_for('signup') }}">Adjust my settings</a>
     </div>
+
+    {% if subscriber.access_token %}
+    <p class="lede small" style="margin-top: 1rem;">
+      Bookmark your <a href="{{ url_for('leads', token=subscriber.access_token) }}">leads dashboard</a>
+      — every application we've ever sent you, in one place, with a spot to mark each one as
+      contacted, won, or lost.
+    </p>
+    {% endif %}
   </div>
 </section>
 {% endblock %}
