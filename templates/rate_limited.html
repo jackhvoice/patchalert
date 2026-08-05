@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}One moment — PatchAlert{% endblock %}
+{% block content %}
+<section class="preview-layout">
+  <h1>Too many requests</h1>
+  <p class="lede small">You've hit a temporary limit on this page — this exists to stop automated
+     abuse, not to get in genuine users' way. Please wait a little while and try again.</p>
+  <a class="btn btn-secondary" href="{{ url_for('home') }}">Back home</a>
+</section>
+{% endblock %}
