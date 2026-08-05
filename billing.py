@@ -30,6 +30,12 @@ IS_CONFIGURED = bool(STRIPE_SECRET_KEY and (STRIPE_PRICE_IDS["basic"] or STRIPE_
 if STRIPE_SECRET_KEY:
     import stripe
     stripe.api_key = STRIPE_SECRET_KEY
+    # The pinned `stripe` package defaults to an older Stripe API version
+    # that predates "Managed Payments" (a newer, account-level Stripe
+    # feature) — without pinning this explicitly, every checkout session
+    # creation fails with "Managed Payments is not supported on API
+    # version ...". See: https://docs.stripe.com/managed-payments
+    stripe.api_version = "2025-03-31.basil"
 
 
 def create_checkout_session(subscriber_email: str, success_url: str, cancel_url: str, plan: str = "basic") -> str:
