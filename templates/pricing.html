@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Pricing — PatchAlert{% endblock %}
+{% block content %}
+<section class="preview-layout">
+  <h1>Simple pricing</h1>
+  <p class="lede">Both plans start with a free {{ trial_days }}-day trial — no card required to sign up and see
+     real results for your patch. After that, pick whichever plan fits how you work.</p>
+
+  <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 1.5rem;">
+
+    <div class="card" style="flex: 1; min-width: 260px; max-width: 380px;">
+      <h2>Basic</h2>
+      <p class="lede small" style="margin-bottom: 1rem;"><strong style="font-size: 1.6rem; color: var(--navy-dark);">£4.99</strong> / month</p>
+      <p class="lede small">Free for your first {{ trial_days }} days.</p>
+      <ul style="color: var(--muted); font-size: 0.94rem; line-height: 1.7; padding-left: 1.2rem; margin: 1rem 0;">
+        <li>One patch: your postcode, up to 5km radius</li>
+        <li>Daily email alert matched to your chosen trade keywords</li>
+        <li>Newly-approved applications flagged as your hottest leads</li>
+        <li>Leads dashboard — track who you've contacted, won, or lost</li>
+      </ul>
+      <a class="btn btn-secondary btn-block" href="{{ url_for('signup') }}">Start free trial</a>
+    </div>
+
+    <div class="card" style="flex: 1; min-width: 260px; max-width: 380px; border-color: var(--orange);">
+      <h2>Pro</h2>
+      <p class="lede small" style="margin-bottom: 1rem;"><strong style="font-size: 1.6rem; color: var(--navy-dark);">£19.99</strong> / month</p>
+      <p class="lede small">Everything in Basic, plus:</p>
+      <ul style="color: var(--muted); font-size: 0.94rem; line-height: 1.7; padding-left: 1.2rem; margin: 1rem 0;">
+        <li>Watch up to 5 patches at once — different postcodes, different areas</li>
+        <li>Radius up to 15km per patch</li>
+        <li>Same-day text or WhatsApp alert the moment something near you is approved</li>
+      </ul>
+      <a class="btn btn-primary btn-block" href="{{ url_for('signup') }}">Start free trial</a>
+    </div>
+
+  </div>
+
+  <p class="lede small" style="margin-top: 2rem;">
+    Prices include VAT. Already signed up? Your account page — with a link to manage your plan
+    and patches — is in every alert email we send you.
+  </p>
+</section>
+{% endblock %}
