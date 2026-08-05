@@ -231,8 +231,13 @@ def leads(token):
 
     sent = db.get_sent_alerts(subscriber["id"])
     statuses = db.get_lead_statuses(subscriber["id"])
-    return render_template("leads.html", subscriber=subscriber, sent=sent, statuses=statuses)
-
+    status_counts = {"new": 0, "contacted": 0, "won": 0, "lost": 0}
+    for r in sent:
+        current_status = statuses.get(r["application_uid"], {}).get("status", "new")
+        status_counts[current_status] = status_counts.get(current_status, 0) + 1
+    return render_template(
+        "leads.html", subscriber=subscriber, sent=sent, statuses=statuses, status_counts=status_counts,
+    )
 
 @app.route("/account/<token>")
 def account(token):
