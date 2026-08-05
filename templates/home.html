@@ -1,5 +1,35 @@
 {% extends "base.html" %}
 {% block title %}PatchAlert — new local building jobs, before your competitors hear about them{% endblock %}
+{% block meta_description %}PatchAlert emails UK builders, extension and loft conversion specialists the moment a matching planning application is submitted near them — free {{ trial_days }}-day trial, no card required.{% endblock %}
+{% block structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "PatchAlert",
+  "url": "{{ request.url_root }}",
+  "logo": "{{ url_for('static', filename='og-image.png', _external=True) }}",
+  "description": "Email alerts for UK builders, extension and loft conversion specialists when a new planning application matching their trade and patch is submitted.",
+  "areaServed": "GB"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "name": "PatchAlert planning application alerts",
+  "serviceType": "Planning application lead alerts for tradespeople",
+  "provider": { "@type": "Organization", "name": "PatchAlert" },
+  "areaServed": "GB",
+  "offers": {
+    "@type": "Offer",
+    "price": "4.99",
+    "priceCurrency": "GBP",
+    "description": "Basic plan, per month, after a free {{ trial_days }}-day trial"
+  }
+}
+</script>
+{% endblock %}
 {% block content %}
 
 <section class="hero">
