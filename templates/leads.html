@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Your leads — PatchAlert{% endblock %}
+{% block robots_meta %}noindex, nofollow{% endblock %}
 {% block content %}
 <section class="preview-layout">
   <h1>Your leads so far</h1>
@@ -9,7 +10,7 @@
   {% if not sent %}
     <p class="lede small">Nothing sent yet — once your first alert goes out, it'll show up here.</p>
   {% else %}
-    <div class="lead-filters" id="lead-filters">
+    <div class="filter-bar" id="lead-filters">
       <button type="button" class="filter-pill active" data-filter="all">All ({{ sent|length }})</button>
       <button type="button" class="filter-pill" data-filter="new">New ({{ status_counts.new }})</button>
       <button type="button" class="filter-pill" data-filter="contacted">Contacted ({{ status_counts.contacted }})</button>
