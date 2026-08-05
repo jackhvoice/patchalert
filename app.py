@@ -34,6 +34,20 @@ TRADE_PRESETS = {
     "Outbuildings/annexes": "outbuilding,annexe,annex,garden room,summer house,studio",
 }
 
+# Development-size filter, set at signup and carried through to the real
+# subscription (see subscribers.sizes in db.py). All three checked by
+# default on the signup form — someone has to deliberately narrow this,
+# it never silently excludes anything on its own.
+VALID_SIZES = ["small", "medium", "large"]
+
+
+def _parse_selected_sizes(form) -> str:
+    """Returns a comma-separated string of whichever of small/medium/large
+    were checked, defaulting to all three if none were (an unchecked-all
+    state is treated as "no filter" rather than "match nothing")."""
+    selected = [s for s in form.getlist("sizes") if s in VALID_SIZES]
+    return ",".join(selected) if selected else ",".join(VALID_SIZES)
+
 
 def _client_ip() -> str:
     """Render sits in front of the app as a proxy, so request.remote_addr
@@ -103,6 +117,8 @@ def signup():
         postcode = request.form["postcode"].strip().upper()
         radius_km = float(request.form.get("radius_km") or 3.0)
         ref = request.form.get("ref", "").strip()
+        sizes_str = _parse_selected_sizes(request.form)
+        sizes_set = set(sizes_str.split(","))
 
         # Geocoded separately from the PlanIt search below, on purpose: this
         # only powers the results-page map (a "here's your radius" visual),
@@ -155,6 +171,7 @@ def signup():
                     radius_km=sample_radius,
                     keywords=keywords if use_keywords else None,
                     recent_days=sample_days,
+                    sizes=sizes_set,
                 )
             except requests_lib.exceptions.RequestException:
                 logger.exception("Failed to fetch sample planning applications for anonymous search")
@@ -176,6 +193,7 @@ def signup():
             records=records,
             ref=ref,
             map_center=map_center,
+            sizes=sizes_str,
         )
     return render_template("signup.html", trade_presets=TRADE_PRESETS, ref=ref)
 
@@ -194,6 +212,7 @@ def subscribe():
         "radius_km": float(request.form.get("radius_km") or 3.0),
         "keywords": request.form.get("keywords") or "extension",
         "referred_by": request.form.get("ref", "").strip() or None,
+        "sizes": request.form.get("sizes") or "small,medium,large",
     }
     subscriber_id = db.add_subscriber(data)
     return redirect(url_for("preview", subscriber_id=subscriber_id))
