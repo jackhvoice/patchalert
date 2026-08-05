@@ -76,6 +76,58 @@ def home():
     return render_template("home.html", trade_presets=TRADE_PRESETS, trial_days=TRIAL_DAYS)
 
 
+# robots.txt/sitemap.xml below only list the handful of pages we actually
+# want Google indexing (home/signup/pricing/privacy/terms) — every other
+# route is either a private, token-based page (account/leads/preview, which
+# also carry a personal access token in the URL and must never be crawled
+# or cached), a POST-only action, or a dynamic per-search results page that
+# would otherwise create huge numbers of thin, near-duplicate pages in
+# Google's index (one per postcode someone's ever searched).
+@app.route("/robots.txt")
+def robots_txt():
+    base = request.url_root.rstrip("/")
+    lines = [
+        "User-agent: *",
+        "Allow: /",
+        "Disallow: /account/",
+        "Disallow: /leads/",
+        "Disallow: /preview/",
+        "Disallow: /unsubscribe/",
+        "Disallow: /upgrade/",
+        "Disallow: /subscribe",
+        "Disallow: /run-digest",
+        "Disallow: /stripe/webhook",
+        "Disallow: /billing/",
+        f"Sitemap: {base}/sitemap.xml",
+        "",
+    ]
+    return app.response_class("\n".join(lines), mimetype="text/plain")
+
+
+@app.route("/sitemap.xml")
+def sitemap_xml():
+    base = request.url_root.rstrip("/")
+    # (path, priority, change frequency) — the homepage and signup/search
+    # page are what we most want Google crawling often and ranking highest,
+    # since those are the actual conversion pages.
+    entries = [
+        ("/", "1.0", "weekly"),
+        ("/signup", "0.9", "weekly"),
+        ("/pricing", "0.7", "monthly"),
+        ("/privacy", "0.2", "yearly"),
+        ("/terms", "0.2", "yearly"),
+    ]
+    urls = "".join(
+        f"<url><loc>{base}{path}</loc><changefreq>{freq}</changefreq><priority>{prio}</priority></url>"
+        for path, prio, freq in entries
+    )
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + urls + "</urlset>"
+    )
+    return app.response_class(xml, mimetype="application/xml")
+
+
 @app.route("/pricing")
 def pricing():
     return render_template("pricing.html", trial_days=TRIAL_DAYS, enforce_billing=ENFORCE_BILLING)
