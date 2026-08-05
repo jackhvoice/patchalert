@@ -11,6 +11,12 @@
 #                                          SQLite file that may not survive every redeploy)
 #   STRIPE_SECRET_KEY                     (only once you're ready to charge)
 #   STRIPE_PRICE_ID_BASIC, STRIPE_PRICE_ID_PRO  (the two plans' recurring Price IDs)
+#   STRIPE_WEBHOOK_SECRET                 (from a Stripe webhook endpoint pointed at
+#                                          /stripe/webhook — this is what actually flips
+#                                          someone to "pro"/"active" after they pay)
+#   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER
+#                                          (only if you want pro subscribers' "text me when
+#                                          approved" option to actually send — see sms.py)
 #   RESEND_API_KEY, RESEND_FROM_ADDRESS   (only once you're ready to send real email)
 #   DIGEST_TRIGGER_SECRET                 (a random string you make up — see below)
 #   ADMIN_EMAIL                           (your own inbox — gets notified if a daily run
