@@ -24,7 +24,8 @@
 
     <div class="confirm-banner">
       <p>You're on the early access list — once alerts are running live, this lands in your
-         inbox automatically. The alert above is free, no card needed.</p>
+         inbox automatically. The alert above is free for your first {{ trial_days }} days, no card needed —
+         see <a href="{{ url_for('pricing') }}">pricing</a> for what happens after that.</p>
       <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
         <a class="btn btn-secondary" href="{{ url_for('signup') }}">Adjust my settings</a>
         {% if subscriber.plan != 'pro' %}
