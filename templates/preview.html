@@ -24,16 +24,28 @@
 
     <div class="confirm-banner">
       <p>You're on the early access list — once alerts are running live, this lands in your
-         inbox automatically. Free during early access; pricing starts once it's out of beta.</p>
-      <a class="btn btn-secondary" href="{{ url_for('signup') }}">Adjust my settings</a>
+         inbox automatically. The alert above is free, no card needed.</p>
+      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <a class="btn btn-secondary" href="{{ url_for('signup') }}">Adjust my settings</a>
+        {% if subscriber.plan != 'pro' %}
+        <a class="btn btn-primary" href="{{ url_for('upgrade', subscriber_id=subscriber.id) }}?plan=pro">Upgrade to Pro — £19.99/month</a>
+        {% endif %}
+      </div>
     </div>
 
-   {% if subscriber.access_token %}
+    {% if subscriber.plan != 'pro' %}
+    <p class="lede small" style="margin-top: 1rem;">
+      Pro adds watching more than one patch at once and a same-day text the moment something
+      near you gets approved — see <a href="{{ url_for('upgrade', subscriber_id=subscriber.id) }}?plan=pro">Upgrade to Pro</a> above,
+      or manage everything from your <a href="{{ url_for('account', token=subscriber.access_token) }}">account page</a> once you're subscribed.
+    </p>
+    {% endif %}
+
+    {% if subscriber.access_token %}
     <p class="lede small" style="margin-top: 1rem;">
       Bookmark your <a href="{{ url_for('leads', token=subscriber.access_token) }}">leads dashboard</a>
       — every application we've ever sent you, in one place, with a spot to mark each one as
-      contacted, won, or lost. Pro subscribers can also
-      <a href="{{ url_for('account', token=subscriber.access_token) }}">watch extra patches and turn on text alerts</a>.
+      contacted, won, or lost.
     </p>
     {% endif %}
   </div>
