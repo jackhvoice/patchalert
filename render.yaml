@@ -3,11 +3,22 @@
 # this file, and it will read this config automatically.
 #
 # You will still need to set real environment variables in the Render
-# dashboard under this service's Environment tab - do not commit real
+# dashboard under this service's Environment tab — do not commit real
 # secrets to git:
-#   STRIPE_SECRET_KEY, STRIPE_PRICE_ID   (only once you're ready to charge)
-#   RESEND_API_KEY, RESEND_FROM_ADDRESS  (only once you're ready to send real email)
-#   DIGEST_TRIGGER_SECRET                 (a random string you make up - see below)
+#   DATABASE_URL                          (a Render Postgres instance's "Internal Database
+#                                          URL" — set this before real subscribers sign up;
+#                                          without it, subscriber data lives only in a local
+#                                          SQLite file that may not survive every redeploy)
+#   STRIPE_SECRET_KEY                     (only once you're ready to charge)
+#   STRIPE_PRICE_ID_BASIC, STRIPE_PRICE_ID_PRO  (the two plans' recurring Price IDs)
+#   RESEND_API_KEY, RESEND_FROM_ADDRESS   (only once you're ready to send real email)
+#   DIGEST_TRIGGER_SECRET                 (a random string you make up — see below)
+#   ADMIN_EMAIL                           (your own inbox — gets notified if a daily run
+#                                          fails or comes back empty for everyone)
+#   ENFORCE_BILLING                       ("1" to actually cut off expired trials; leave
+#                                          unset/"0" to keep the current free-early-access
+#                                          strategy)
+#   TRIAL_DAYS                            (defaults to 21 if unset)
 
 services:
   - type: web
@@ -18,7 +29,7 @@ services:
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 75
     envVars:
       - key: PLANIT_USE_FIXTURE
-        value: "0"
+        value: "0"   # switch to the real PlanIt API once deployed — see planit_client.py
       - key: PYTHON_VERSION
         value: "3.11.15"
 
@@ -27,8 +38,8 @@ services:
 # a POST/GET endpoint at /run-digest?token=YOUR_SECRET that runs the same
 # job over HTTP. Set DIGEST_TRIGGER_SECRET to a random string in Render's
 # dashboard, then use a free external scheduler to call it once a day:
-#   - cron-job.org (free, no account limits that matter here) - add a job
+#   - cron-job.org (free, no account limits that matter here) — add a job
 #     that does a GET to https://your-app.onrender.com/run-digest?token=...
 #     once a day.
 #   - Or a GitHub Actions scheduled workflow in this same repo that runs
-#     curl on a cron schedule - see .github/workflows/daily-digest.yml.
+#     `curl` on a cron schedule — see .github/workflows/daily-digest.yml.
