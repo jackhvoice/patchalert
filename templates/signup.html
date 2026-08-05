@@ -6,6 +6,7 @@
     <h1>See what's happening near you</h1>
     <p class="lede small">Takes 10 seconds — no email needed to see real results.</p>
     <form method="post" class="form card">
+      <input type="hidden" name="ref" value="{{ ref|default('') }}">
       <label>Postcode <span class="hint">(your base, or the area you want work in)</span>
         <input type="text" name="postcode" placeholder="e.g. LS6 3EF" required>
       </label>
@@ -29,6 +30,9 @@
         <input type="text" name="custom_keywords" placeholder="e.g. driveway, patio">
       </label>
       <button class="btn btn-primary btn-block" type="submit">Show me what's near me</button>
+      <p class="hint" style="margin: 0;">No email needed for this step. If you sign up on the next
+         page, we'll only ever use your details to send your alerts — see our
+         <a href="{{ url_for('privacy') }}">Privacy Policy</a>.</p>
     </form>
   </div>
 
