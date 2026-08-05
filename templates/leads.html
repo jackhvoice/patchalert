@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Your leads — PatchAlert{% endblock %}
+{% block content %}
+<section class="preview-layout">
+  <h1>Your leads so far</h1>
+  <p class="lede small">Every planning application we've ever sent you for {{ subscriber.postcode }},
+     in one place. Mark each one as you work it — nothing here is shared with anyone else.</p>
+
+  {% if not sent %}
+    <p class="lede small">Nothing sent yet — once your first alert goes out, it'll show up here.</p>
+  {% else %}
+    <div class="results-list">
+      {% for r in sent %}
+        {% set current = statuses.get(r.application_uid, {}) %}
+        <div class="mock-application lead-row">
+          {% if r.stage == 'approved' %}<span class="stage-badge stage-approved">Was just approved</span>{% endif %}
+          <p class="mock-app-address">{{ r.address or ("Reference " ~ r.application_uid) }}</p>
+          {% if r.description %}<p class="mock-app-desc">{{ r.description }}</p>{% endif %}
+          <p class="mock-email-line muted">Sent {{ r.sent_at }}{% if r.link %} · <a href="{{ r.link }}" target="_blank" rel="noopener">View on council site</a>{% endif %}</p>
+          <form method="post" class="lead-status-form">
+            <input type="hidden" name="application_uid" value="{{ r.application_uid }}">
+            <select name="status" onchange="this.form.submit()">
+              {% for opt in ["new", "contacted", "won", "lost"] %}
+                <option value="{{ opt }}" {% if current.get("status", "new") == opt %}selected{% endif %}>{{ opt|capitalize }}</option>
+              {% endfor %}
+            </select>
+          </form>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <p class="lede small" style="margin-top: 1.5rem;">
+    <a href="{{ url_for('signup') }}">Adjust your search settings</a> ·
+    <a href="{{ url_for('unsubscribe', token=subscriber.access_token) }}">Unsubscribe</a>
+  </p>
+</section>
+{% endblock %}
