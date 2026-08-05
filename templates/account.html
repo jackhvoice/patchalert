@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Your account — PatchAlert{% endblock %}
+{% block content %}
+<section class="preview-layout">
+  <h1>Your account</h1>
+  <p class="lede small">
+    Plan: <strong>{{ subscriber.plan|capitalize }}</strong>
+    {% if subscriber.plan != 'pro' %}
+      — <a href="{{ url_for('upgrade', subscriber_id=subscriber.id) }}?plan=pro">upgrade to Pro</a>
+      to watch more than one patch and get a text the moment something near you is approved.
+    {% endif %}
+  </p>
+
+  <h3>Your patches</h3>
+  <div class="results-list">
+    <div class="mock-application">
+      <p class="mock-app-address">{{ subscriber.postcode }} <span class="hint">(primary, set at signup)</span></p>
+      <p class="mock-app-desc">{{ subscriber.radius_km|int }}km · "{{ subscriber.keywords }}"</p>
+    </div>
+    {% for p in patches %}
+      <div class="mock-application">
+        <p class="mock-app-address">{{ p.postcode }}</p>
+        <p class="mock-app-desc">{{ p.radius_km|int }}km · "{{ p.keywords }}"</p>
+        <form method="post" action="{{ url_for('delete_patch', token=subscriber.access_token, patch_id=p.id) }}">
+          <button class="btn btn-secondary" type="submit" style="padding: 0.4rem 0.9rem; font-size: 0.85rem;">Remove this patch</button>
+        </form>
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if subscriber.plan == 'pro' %}
+    {% if patches|length < max_patches %}
+      <div class="card" style="margin-top: 1rem; max-width: 480px;">
+        <h3>Add another patch</h3>
+        <form method="post" action="{{ url_for('add_patch', token=subscriber.access_token) }}" class="form">
+          <label>Postcode
+            <input type="text" name="postcode" placeholder="e.g. BS1 4ST" required>
+          </label>
+          <label>Radius (km)
+            <input type="text" name="radius_km" value="5" inputmode="numeric">
+          </label>
+          <label>Trade keywords <span class="hint">(comma separated)</span>
+            <input type="text" name="keywords" placeholder="e.g. extension,loft conversion">
+          </label>
+          <button class="btn btn-primary" type="submit">Add patch</button>
+        </form>
+      </div>
+    {% else %}
+      <p class="lede small">You've reached the limit of {{ max_patches }} extra patches.</p>
+    {% endif %}
+  {% else %}
+    <p class="lede small">Extra patches are a Pro feature —
+       <a href="{{ url_for('upgrade', subscriber_id=subscriber.id) }}?plan=pro">upgrade to Pro</a> to add more.</p>
+  {% endif %}
+
+  <h3 style="margin-top: 2rem;">Instant text alerts (Pro)</h3>
+  {% if subscriber.plan == 'pro' %}
+    <div class="card" style="max-width: 480px;">
+      <form method="post" action="{{ url_for('update_notifications', token=subscriber.access_token) }}" class="form">
+        <label>Mobile number <span class="hint">(UK, e.g. 07700 900123)</span>
+          <input type="text" name="phone" value="{{ subscriber.phone or '' }}" placeholder="07700 900123">
+        </label>
+        <label class="checkbox-pill" style="width: fit-content;">
+          <input type="checkbox" name="sms_opt_in" {% if subscriber.sms_opt_in == '1' %}checked{% endif %}>
+          Text me the same day an application near me gets approved
+        </label>
+        <button class="btn btn-primary" type="submit">Save</button>
+        <p class="hint" style="margin: 0;">This piggybacks on the once-daily digest job, so it's a same-day
+           text alongside your email, not instant to the minute — but a text tends to get seen faster
+           than an inbox you don't check all day.</p>
+      </form>
+    </div>
+  {% else %}
+    <p class="lede small">Text alerts for newly-approved applications are a Pro feature —
+       <a href="{{ url_for('upgrade', subscriber_id=subscriber.id) }}?plan=pro">upgrade to Pro</a> to turn this on.</p>
+  {% endif %}
+
+  <p class="lede small" style="margin-top: 1.5rem;">
+    <a href="{{ url_for('leads', token=subscriber.access_token) }}">Your leads</a> ·
+    <a href="{{ url_for('signup') }}">Adjust your main search</a> ·
+    <a href="{{ url_for('unsubscribe', token=subscriber.access_token) }}">Unsubscribe</a>
+  </p>
+</section>
+{% endblock %}
