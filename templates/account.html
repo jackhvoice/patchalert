@@ -9,7 +9,20 @@
       — <a href="{{ url_for('upgrade', subscriber_id=subscriber.id) }}?plan=pro">upgrade to Pro</a>
       to watch more than one patch and get a text the moment something near you is approved.
     {% endif %}
+    · <a href="{{ url_for('pricing') }}">See all plans</a>
   </p>
+
+  {% if trial_days_left is not none %}
+    <p class="lede small" style="max-width: 480px;">
+      {% if trial_days_left > 0 %}
+        Your free trial ends in {{ trial_days_left }} day{{ 's' if trial_days_left != 1 else '' }}.
+      {% else %}
+        Your free trial has ended, so alerts are paused for now.
+      {% endif %}
+      To keep getting alerts, <a href="{{ url_for('upgrade', subscriber_id=subscriber.id) }}">subscribe to Basic (£4.99/mo)</a>
+      or <a href="{{ url_for('upgrade', subscriber_id=subscriber.id) }}?plan=pro">upgrade to Pro (£19.99/mo)</a>.
+    </p>
+  {% endif %}
 
   <h3>Your patches</h3>
   <div class="results-list">
@@ -61,24 +74,4 @@
           <input type="text" name="phone" value="{{ subscriber.phone or '' }}" placeholder="07700 900123">
         </label>
         <label class="checkbox-pill" style="width: fit-content;">
-          <input type="checkbox" name="sms_opt_in" {% if subscriber.sms_opt_in == '1' %}checked{% endif %}>
-          Text me the same day an application near me gets approved
-        </label>
-        <button class="btn btn-primary" type="submit">Save</button>
-        <p class="hint" style="margin: 0;">This piggybacks on the once-daily digest job, so it's a same-day
-           text alongside your email, not instant to the minute — but a text tends to get seen faster
-           than an inbox you don't check all day.</p>
-      </form>
-    </div>
-  {% else %}
-    <p class="lede small">Text alerts for newly-approved applications are a Pro feature —
-       <a href="{{ url_for('upgrade', subscriber_id=subscriber.id) }}?plan=pro">upgrade to Pro</a> to turn this on.</p>
-  {% endif %}
-
-  <p class="lede small" style="margin-top: 1.5rem;">
-    <a href="{{ url_for('leads', token=subscriber.access_token) }}">Your leads</a> ·
-    <a href="{{ url_for('signup') }}">Adjust your main search</a> ·
-    <a href="{{ url_for('unsubscribe', token=subscriber.access_token) }}">Unsubscribe</a>
-  </p>
-</section>
-{% endblock %}
+          <input type="checkbox" name="sms_opt_in" {% if subscriber.sms_opt_in == '1'
