@@ -59,6 +59,21 @@ PREVIEW_SEARCH_TIERS = [
     (5.0, 90, False),
 ]
 
+_ALL_SIZES = {"small", "medium", "large"}
+
+
+def _parse_sizes(sizes_value) -> set | None:
+    """Turns the subscribers.sizes column (e.g. 'small,medium') into a set
+    for planit_client.fetch_applications()'s sizes= param. Missing, blank,
+    or unrecognised values are treated as "no filter" (watch every size) —
+    the same safe default as before this column existed, so an old
+    subscriber row (or any bug) never silently narrows someone's alert to
+    nothing they didn't ask for."""
+    if not sizes_value:
+        return None
+    parsed = {s.strip().lower() for s in sizes_value.split(",") if s.strip()} & _ALL_SIZES
+    return parsed or None
+
 
 def _url(path: str) -> str:
     """Builds an absolute link for use inside an email. APP_URL is the same
@@ -117,18 +132,25 @@ def _subscriber_patches(subscriber: dict) -> list:
     subscriber is on the 'pro' plan. Checking the plan here rather than
     just trusting whatever rows exist means downgrading to 'basic'
     immediately stops watching the extra patches (and re-upgrading brings
-    them straight back) without needing to delete or restore any rows."""
+    them straight back) without needing to delete or restore any rows.
+
+    Only the primary patch carries a development-size filter for now — the
+    "patches" table (extra Pro patches) doesn't have its own sizes column
+    yet, so additional patches always watch every size (sizes=None below)
+    until that's added as a follow-up."""
     patches = [{
         "postcode": subscriber["postcode"],
         "radius_km": subscriber["radius_km"],
         "keywords": subscriber["keywords"],
         "label": subscriber["postcode"],
+        "sizes": _parse_sizes(subscriber.get("sizes")),
     }]
     if subscriber.get("plan") == "pro":
         for p in db.get_additional_patches(subscriber["id"]):
             patches.append({
                 "postcode": p["postcode"], "radius_km": p["radius_km"],
                 "keywords": p["keywords"], "label": p["postcode"],
+                "sizes": None,
             })
     return patches
 
@@ -169,6 +191,7 @@ def build_digest_for_subscriber(subscriber: dict, preview: bool = False) -> tupl
     multi_patch = False
 
     if preview:
+        preview_sizes = _parse_sizes(subscriber.get("sizes"))
         records = []
         matched_keywords = True
         effective_radius = effective_days = None
@@ -181,6 +204,7 @@ def build_digest_for_subscriber(subscriber: dict, preview: bool = False) -> tupl
                 radius_km=effective_radius,
                 keywords=subscriber["keywords"] if use_keywords else None,
                 recent_days=effective_days,
+                sizes=preview_sizes,
             )
             if result:
                 records = result
@@ -203,6 +227,7 @@ def build_digest_for_subscriber(subscriber: dict, preview: bool = False) -> tupl
                     radius_km=patch_radius,
                     keywords=patch["keywords"],
                     recent_days=effective_days,
+                    sizes=patch.get("sizes"),
                 )
             except requests.exceptions.RequestException:
                 # One bad patch (typo'd postcode, transient PlanIt error for
