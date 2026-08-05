@@ -47,7 +47,19 @@ CREATE TABLE IF NOT EXISTS subscribers (
     access_token TEXT,
     referred_by TEXT,
     referred_count INTEGER DEFAULT 0,
+    phone TEXT,
+    sms_opt_in TEXT DEFAULT '0',
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS patches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    subscriber_id INTEGER NOT NULL,
+    postcode TEXT NOT NULL,
+    radius_km REAL DEFAULT 3.0,
+    keywords TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (subscriber_id) REFERENCES subscribers (id)
 );
 
 CREATE TABLE IF NOT EXISTS sent_alerts (
@@ -95,6 +107,17 @@ CREATE TABLE IF NOT EXISTS subscribers (
     access_token TEXT,
     referred_by TEXT,
     referred_count INTEGER DEFAULT 0,
+    phone TEXT,
+    sms_opt_in TEXT DEFAULT '0',
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS patches (
+    id SERIAL PRIMARY KEY,
+    subscriber_id INTEGER NOT NULL REFERENCES subscribers (id),
+    postcode TEXT NOT NULL,
+    radius_km REAL DEFAULT 3.0,
+    keywords TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -139,11 +162,19 @@ MIGRATIONS = [
     "ALTER TABLE subscribers ADD COLUMN access_token TEXT",
     "ALTER TABLE subscribers ADD COLUMN referred_by TEXT",
     "ALTER TABLE subscribers ADD COLUMN referred_count INTEGER DEFAULT 0",
+    "ALTER TABLE subscribers ADD COLUMN phone TEXT",
+    "ALTER TABLE subscribers ADD COLUMN sms_opt_in TEXT DEFAULT '0'",
     "ALTER TABLE sent_alerts ADD COLUMN address TEXT",
     "ALTER TABLE sent_alerts ADD COLUMN description TEXT",
     "ALTER TABLE sent_alerts ADD COLUMN link TEXT",
     "ALTER TABLE sent_alerts ADD COLUMN stage TEXT",
 ]
+
+# The primary patch (postcode/radius_km/keywords stored directly on the
+# subscriber row, set at signup) is always included and doesn't count
+# against this — this caps how many EXTRA patches a "pro" subscriber can
+# add via /account/<token>.
+MAX_ADDITIONAL_PATCHES = 4
 
 
 def get_conn():
@@ -195,6 +226,8 @@ def init_db():
             "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS access_token TEXT",
             "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS referred_by TEXT",
             "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS referred_count INTEGER DEFAULT 0",
+            "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS phone TEXT",
+            "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS sms_opt_in TEXT DEFAULT '0'",
             "ALTER TABLE sent_alerts ADD COLUMN IF NOT EXISTS address TEXT",
             "ALTER TABLE sent_alerts ADD COLUMN IF NOT EXISTS description TEXT",
             "ALTER TABLE sent_alerts ADD COLUMN IF NOT EXISTS link TEXT",
@@ -294,6 +327,74 @@ def unsubscribe(token: str) -> bool:
 def set_plan(subscriber_id, plan: str, status: str = "active"):
     conn = get_conn()
     _exec(conn, "UPDATE subscribers SET plan = ?, subscription_status = ? WHERE id = ?", (plan, status, subscriber_id))
+    conn.commit()
+    conn.close()
+
+
+def set_plan_by_email(email: str, plan: str, status: str = "active"):
+    """Used by the Stripe webhook — at checkout time we only reliably know
+    the customer's email, not their subscriber id."""
+    conn = get_conn()
+    _exec(conn, "UPDATE subscribers SET plan = ?, subscription_status = ? WHERE email = ?", (plan, status, email))
+    conn.commit()
+    conn.close()
+
+
+def get_additional_patches(subscriber_id) -> list:
+    """Extra patches beyond the subscriber's original signup search (which
+    stays on the subscribers row itself as their "primary" patch)."""
+    conn = get_conn()
+    cur = _exec(
+        conn,
+        "SELECT id, postcode, radius_km, keywords FROM patches WHERE subscriber_id = ? ORDER BY id",
+        (subscriber_id,),
+    )
+    rows = [dict(r) for r in cur.fetchall()]
+    conn.close()
+    return rows
+
+
+def count_additional_patches(subscriber_id) -> int:
+    conn = get_conn()
+    cur = _exec(conn, "SELECT COUNT(*) AS c FROM patches WHERE subscriber_id = ?", (subscriber_id,))
+    row = dict(cur.fetchone())
+    conn.close()
+    return row["c"]
+
+
+def add_patch(subscriber_id, postcode: str, radius_km: float, keywords: str) -> bool:
+    """Returns False without inserting anything if the subscriber is
+    already at MAX_ADDITIONAL_PATCHES — enforced here (not just in the
+    route) so this stays safe to call from anywhere."""
+    if count_additional_patches(subscriber_id) >= MAX_ADDITIONAL_PATCHES:
+        return False
+    conn = get_conn()
+    _exec(
+        conn,
+        "INSERT INTO patches (subscriber_id, postcode, radius_km, keywords) VALUES (?, ?, ?, ?)",
+        (subscriber_id, postcode, radius_km, keywords),
+    )
+    conn.commit()
+    conn.close()
+    return True
+
+
+def delete_patch(patch_id, subscriber_id):
+    """Scoped to subscriber_id too, so one subscriber can't delete another's
+    patch by guessing an id."""
+    conn = get_conn()
+    _exec(conn, "DELETE FROM patches WHERE id = ? AND subscriber_id = ?", (patch_id, subscriber_id))
+    conn.commit()
+    conn.close()
+
+
+def update_notification_settings(subscriber_id, phone: str, sms_opt_in: bool):
+    conn = get_conn()
+    _exec(
+        conn,
+        "UPDATE subscribers SET phone = ?, sms_opt_in = ? WHERE id = ?",
+        (phone, "1" if sms_opt_in else "0", subscriber_id),
+    )
     conn.commit()
     conn.close()
 
