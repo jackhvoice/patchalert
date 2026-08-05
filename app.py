@@ -16,18 +16,57 @@ db.init_db()
 
 DIGEST_TRIGGER_SECRET = os.environ.get("DIGEST_TRIGGER_SECRET")
 
+# Broader than a single word per trade on purpose — real planning
+# descriptions are inconsistently worded ("erection of two storey rear
+# addition" never contains the word "extension"), so matching on only one
+# term per trade was quietly missing genuinely relevant jobs. These lists
+# are a reasonable starting point, not exhaustive — worth refining further
+# once you can see which phrasings show up most in your own subscribers'
+# results.
 TRADE_PRESETS = {
-    "Extensions": "extension",
-    "Loft conversions": "loft conversion",
-    "Garage conversions": "garage conversion",
-    "Conservatories": "conservatory",
-    "Outbuildings/annexes": "outbuilding,annexe",
+    "Extensions": "extension,rear extension,side extension,two storey,single storey,dormer,rear addition",
+    "Loft conversions": "loft conversion,loft,dormer window,roof extension",
+    "Garage conversions": "garage conversion,garage to,garage into,convert garage",
+    "Conservatories": "conservatory,orangery,sunroom,garden room",
+    "Outbuildings/annexes": "outbuilding,annexe,annex,garden room,summer house,studio",
 }
+
+
+def _client_ip() -> str:
+    """Render sits in front of the app as a proxy, so request.remote_addr
+    alone would just be Render's own address — the real visitor IP is in
+    X-Forwarded-For (its first entry) when present."""
+    forwarded = request.headers.get("X-Forwarded-For", "")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.remote_addr or "unknown"
+
+
+def _rate_limited(route: str, max_requests: int, window_minutes: int = 60) -> bool:
+    """Returns True (and logs the request either way) if this IP has hit
+    the limit for this route. A basic deterrent against a bot or an
+    accidental refresh-loop hammering the search/signup endpoints — each
+    anonymous search can trigger several outbound calls to postcodes.io
+    and PlanIt, so unrestricted abuse here isn't free."""
+    ip = _client_ip()
+    allowed = db.check_rate_limit(ip, route, max_requests=max_requests, window_minutes=window_minutes)
+    db.log_request(ip, route)
+    return not allowed
 
 
 @app.route("/")
 def home():
     return render_template("home.html", trade_presets=TRADE_PRESETS)
+
+
+@app.route("/privacy")
+def privacy():
+    return render_template("privacy.html")
+
+
+@app.route("/terms")
+def terms():
+    return render_template("terms.html")
 
 
 @app.route("/signup", methods=["GET", "POST"])
@@ -39,7 +78,12 @@ def signup():
     product works than asking them to take it on faith. Step 2 (capturing
     name/email) happens in subscribe() below, once they've seen results.
     """
+    ref = request.values.get("ref", "").strip()
+
     if request.method == "POST":
+        if _rate_limited("signup", max_requests=20, window_minutes=60):
+            return render_template("rate_limited.html"), 429
+
         selected = request.form.getlist("trades")
         custom = request.form.get("custom_keywords", "").strip()
         keyword_terms = []
@@ -50,6 +94,7 @@ def signup():
         keywords = ",".join(keyword_terms) if keyword_terms else "extension"
         postcode = request.form["postcode"].strip().upper()
         radius_km = float(request.form.get("radius_km") or 3.0)
+        ref = request.form.get("ref", "").strip()
 
         # Escalating search: try a fast, narrow, keyword-matched search
         # first, and only widen if it comes back empty. This matters for
@@ -108,20 +153,25 @@ def signup():
             sample_days=sample_days,
             matched_keywords=matched_keywords,
             records=records,
+            ref=ref,
         )
-    return render_template("signup.html", trade_presets=TRADE_PRESETS)
+    return render_template("signup.html", trade_presets=TRADE_PRESETS, ref=ref)
 
 
 @app.route("/subscribe", methods=["POST"])
 def subscribe():
     """Step 2 of signup: after seeing real results, capture name/email and
     save the search they already saw as their ongoing daily alert."""
+    if _rate_limited("subscribe", max_requests=10, window_minutes=60):
+        return render_template("rate_limited.html"), 429
+
     data = {
         "name": request.form["name"].strip(),
         "email": request.form["email"].strip().lower(),
         "postcode": request.form["postcode"].strip().upper(),
         "radius_km": float(request.form.get("radius_km") or 3.0),
         "keywords": request.form.get("keywords") or "extension",
+        "referred_by": request.form.get("ref", "").strip() or None,
     }
     subscriber_id = db.add_subscriber(data)
     return redirect(url_for("preview", subscriber_id=subscriber_id))
@@ -145,15 +195,49 @@ def preview(subscriber_id):
     )
 
 
+@app.route("/unsubscribe/<token>")
+def unsubscribe(token):
+    ok = db.unsubscribe(token)
+    return render_template("unsubscribed.html", ok=ok)
+
+
+@app.route("/leads/<token>", methods=["GET", "POST"])
+def leads(token):
+    """A lightweight, login-free "leads so far" view for a subscriber —
+    everything PatchAlert has ever sent them, with a simple status they can
+    set (new / contacted / won / lost). Linked from the access-token-based
+    URL in every digest email, so it's usable without building a full
+    account/login system."""
+    subscriber = db.get_subscriber_by_token(token)
+    if not subscriber:
+        return "Not found", 404
+
+    if request.method == "POST":
+        uid = request.form.get("application_uid")
+        status = request.form.get("status", "new")
+        note = request.form.get("note", "")
+        if uid:
+            db.set_lead_status(subscriber["id"], uid, status, note)
+        return redirect(url_for("leads", token=token))
+
+    sent = db.get_sent_alerts(subscriber["id"])
+    statuses = db.get_lead_statuses(subscriber["id"])
+    return render_template("leads.html", subscriber=subscriber, sent=sent, statuses=statuses)
+
+
 @app.route("/upgrade/<int:subscriber_id>")
 def upgrade(subscriber_id):
     subscriber = db.get_subscriber(subscriber_id)
     if not subscriber:
         return "Not found", 404
+    plan = request.args.get("plan", "basic")
+    if plan not in ("basic", "pro"):
+        plan = "basic"
     checkout_url = create_checkout_session(
         subscriber["email"],
         success_url=url_for("preview", subscriber_id=subscriber_id, _external=True),
         cancel_url=url_for("preview", subscriber_id=subscriber_id, _external=True),
+        plan=plan,
     )
     return redirect(checkout_url)
 
