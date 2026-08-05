@@ -1,11 +1,9 @@
 {% extends "base.html" %}
-{% block title %}One moment — PatchAlert{% endblock %}
+{% block title %}Billing not set up yet{% endblock %}
 {% block robots_meta %}noindex, nofollow{% endblock %}
 {% block content %}
-<section class="preview-layout">
-  <h1>Too many requests</h1>
-  <p class="lede small">You've hit a temporary limit on this page — this exists to stop automated
-     abuse, not to get in genuine users' way. Please wait a little while and try again.</p>
-  <a class="btn btn-secondary" href="{{ url_for('home') }}">Back home</a>
-</section>
+<h1>Billing isn't switched on yet</h1>
+<p class="muted">This prototype doesn't have live Stripe keys configured. See <code>billing.py</code>
+   for the exact steps to activate real subscriptions once you have a Stripe account.</p>
+<a class="btn" href="{{ url_for('home') }}">Back home</a>
 {% endblock %}
