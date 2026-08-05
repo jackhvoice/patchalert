@@ -18,7 +18,45 @@
       </div>
       <div class="mock-email-body">
         <p class="mock-email-subject">{{ subject }}</p>
-        <pre class="mock-email-text">{{ body }}</pre>
+        {% if records %}
+          <p class="mock-email-line">Hi {{ subscriber.name }},</p>
+
+          {% if approved_records %}
+            <p class="mock-email-line">
+              <span class="stage-badge stage-approved">Just approved</span>
+              {{ approved_records|length }} of these just got approved — the best moment to reach
+              out, before other trades even hear about it:
+            </p>
+            <div class="results-list">
+              {% for r in approved_records %}
+                <div class="mock-application stage-approved-card">
+                  <p class="mock-app-address">{{ r.address }}{% if r._patch_label %} <span class="hint">({{ r._patch_label }})</span>{% endif %}</p>
+                  <p class="mock-app-desc">{{ r.description }}</p>
+                  {% if r.link %}<p class="mock-email-line muted" style="margin: 0.4rem 0 0;"><a href="{{ r.link }}" target="_blank" rel="noopener">View on council site</a></p>{% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          {% if other_records %}
+            <p class="mock-email-line" style="margin-top: {{ '1.2rem' if approved_records else '0' }};">
+              {% if approved_records %}Also newly submitted:{% else %}{{ other_records|length }} new planning application(s):{% endif %}
+            </p>
+            <div class="results-list">
+              {% for r in other_records %}
+                <div class="mock-application">
+                  <p class="mock-app-address">{{ r.address }}{% if r._patch_label %} <span class="hint">({{ r._patch_label }})</span>{% endif %}</p>
+                  <p class="mock-app-desc">{{ r.description }}</p>
+                  {% if r.link %}<p class="mock-email-line muted" style="margin: 0.4rem 0 0;"><a href="{{ r.link }}" target="_blank" rel="noopener">View on council site</a></p>{% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          <p class="mock-email-line muted" style="margin-top: 1.2rem;">Reach out early — you'll usually be first to know before local competitors.</p>
+        {% else %}
+          <pre class="mock-email-text">{{ body }}</pre>
+        {% endif %}
       </div>
     </div>
 
