@@ -21,17 +21,26 @@
          we'll keep watching for you regardless.</p>
     {% elif records %}
       {% if matched_keywords %}
-        <p class="lede small">A quick {{ sample_radius|int }}km/{{ sample_days }}-day sample matching
-           "{{ keywords }}" — your daily alert will search the full {{ radius_km|int }}km and 7 days.</p>
+        <p class="lede small">Matching "{{ keywords }}" near {{ postcode }} — your daily alert will
+           keep watching this {{ radius_km|int }}km radius, every 7 days, for anything new.</p>
       {% else %}
-        <p class="lede small">Nothing matched "{{ keywords }}" specifically nearby recently, but here's
-           real planning activity within {{ sample_radius|int }}km in the last {{ sample_days }} days —
-           proof there's genuine data flowing for your area. Your daily alert will keep watching
-           specifically for "{{ keywords }}" at your full {{ radius_km|int }}km radius.</p>
+        <p class="lede small">Nothing matched "{{ keywords }}" specifically nearby just now, but here's
+           other real planning activity nearby — proof there's genuine data flowing for your area.
+           Your daily alert will keep watching specifically for "{{ keywords }}" within your full
+           {{ radius_km|int }}km radius.</p>
       {% endif %}
-      <div class="results-list">
+
+      {% set approved_count = records | selectattr("_stage", "equalto", "approved") | list | length %}
+      {% if approved_count %}
+        <div class="filter-bar" id="results-filters">
+          <button type="button" class="filter-pill active" data-filter="all">All ({{ records|length }})</button>
+          <button type="button" class="filter-pill" data-filter="approved">Just approved ({{ approved_count }})</button>
+        </div>
+      {% endif %}
+
+      <div class="results-list" id="results-cards">
         {% for r in records %}
-          <div class="mock-application{% if r._stage == 'approved' %} stage-approved-card{% endif %}">
+          <div class="mock-application{% if r._stage == 'approved' %} stage-approved-card{% endif %}" data-stage="{{ r._stage }}">
             {% if r._stage == 'approved' %}<span class="stage-badge stage-approved">Just approved</span>{% endif %}
             <p class="mock-app-address">{{ r.address }}</p>
             <p class="mock-app-desc">{{ r.description }}</p>
@@ -39,12 +48,11 @@
         {% endfor %}
       </div>
     {% else %}
-      <p class="lede small">No matches for "{{ keywords }}" within {{ sample_radius|int }}km in the
-         last {{ sample_days }} days — and no other recent planning activity nearby either. That
-         usually means a genuinely quiet patch, though very occasionally it can mean your local
-         council reports into this data source more slowly than others. Your daily alert will keep
-         watching the full {{ radius_km|int }}km and 7 days, and we'll email you the moment
-         something matches.</p>
+      <p class="lede small">No matches for "{{ keywords }}" nearby recently — and no other recent
+         planning activity nearby either. That usually means a genuinely quiet patch, though very
+         occasionally it can mean your local council reports into this data source more slowly than
+         others. Your daily alert will keep watching your full {{ radius_km|int }}km radius, and
+         we'll email you the moment something matches.</p>
     {% endif %}
 
     <p class="lede small" style="margin-top: 1rem;">
@@ -60,6 +68,7 @@
         <input type="hidden" name="radius_km" value="{{ radius_km }}">
         <input type="hidden" name="keywords" value="{{ keywords }}">
         <input type="hidden" name="ref" value="{{ ref|default('') }}">
+        <input type="hidden" name="sizes" value="{{ sizes }}">
         <label>Your name
           <input type="text" name="name" required placeholder="Dave Builder">
         </label>
@@ -134,4 +143,27 @@
   })();
 </script>
 {% endif %}
+
+<script>
+  (function () {
+    // Same pure client-side show/hide pattern as the leads dashboard's
+    // filter bar — no page reload, just toggles which already-fetched
+    // cards are visible.
+    var filterBar = document.getElementById("results-filters");
+    if (!filterBar) return;
+    var buttons = filterBar.querySelectorAll(".filter-pill");
+    var rows = document.querySelectorAll("#results-cards .mock-application");
+    buttons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        buttons.forEach(function (b) { b.classList.remove("active"); });
+        btn.classList.add("active");
+        var filter = btn.getAttribute("data-filter");
+        rows.forEach(function (row) {
+          var show = filter === "all" || row.getAttribute("data-stage") === filter;
+          row.style.display = show ? "" : "none";
+        });
+      });
+    });
+  })();
+</script>
 {% endblock %}
