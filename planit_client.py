@@ -74,6 +74,32 @@ def _matches_keywords(record: dict, terms: list) -> bool:
     return any(term in text for term in terms)
 
 
+# PlanIt's own decision-stage field name is not confirmed against a live
+# response in this build environment (see the module docstring's "NOTE ON
+# SANDBOX TESTING" — no outbound internet access here). "app_state" and
+# "decided_date" are PlanIt's documented field names as of the docs
+# reviewed for this build; if a live response doesn't include them, this
+# falls back to "submitted" for everything rather than raising, so a wrong
+# field name degrades gracefully instead of breaking the whole product.
+# Re-check the actual field names in a real response before relying on
+# this for pricing/marketing claims.
+_APPROVED_STATES = {"permitted", "conditions", "granted", "approved"}
+_CLOSED_STATES = {"rejected", "refused", "withdrawn", "declined"}
+
+
+def stage_of(record: dict) -> str:
+    """Returns 'approved', 'closed', or 'submitted' for a PlanIt record,
+    used to flag newly-approved applications as the hottest leads (see
+    digest.py). Defensive by design — an unrecognised or missing state
+    always falls back to 'submitted' rather than erroring."""
+    state = (record.get("app_state") or "").strip().lower()
+    if state in _APPROVED_STATES:
+        return "approved"
+    if state in _CLOSED_STATES:
+        return "closed"
+    return "submitted"
+
+
 def fetch_applications(
     postcode: str,
     radius_km: float = 3.0,
@@ -102,6 +128,8 @@ def fetch_applications(
         records = data["records"]
         if terms:
             records = [r for r in records if _matches_keywords(r, terms)]
+        for r in records:
+            r["_stage"] = stage_of(r)
         return records
 
     lat, lng = _geocode_postcode(postcode)
@@ -115,7 +143,10 @@ def fetch_applications(
         # Ask PlanIt for only the fields we actually use — a smaller
         # response is faster for them to build and for us to receive,
         # which helps avoid the read timeout a full-fat response can hit.
-        "select": "uid,area_name,start_date,address,description,link",
+        # app_state/decided_date/agent_name power the "just approved" and
+        # agent-name features in digest.py — see stage_of() above for why
+        # these are handled defensively if the names turn out to differ.
+        "select": "uid,area_name,start_date,address,description,link,app_state,decided_date,agent_name",
     }
 
     headers = {
@@ -143,4 +174,6 @@ def fetch_applications(
     records = resp.json().get("records", [])
     if terms:
         records = [r for r in records if _matches_keywords(r, terms)]
+    for r in records:
+        r["_stage"] = stage_of(r)
     return records
