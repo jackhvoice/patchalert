@@ -2,6 +2,7 @@ import logging
 import os
 
 import requests as requests_lib
+import stripe
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 
 import db
@@ -15,6 +16,7 @@ app = Flask(__name__)
 db.init_db()
 
 DIGEST_TRIGGER_SECRET = os.environ.get("DIGEST_TRIGGER_SECRET")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET")
 
 # Broader than a single word per trade on purpose — real planning
 # descriptions are inconsistently worded ("erection of two storey rear
@@ -225,6 +227,58 @@ def leads(token):
     return render_template("leads.html", subscriber=subscriber, sent=sent, statuses=statuses)
 
 
+@app.route("/account/<token>")
+def account(token):
+    """One page for everything beyond the original signup search: extra
+    patches (pro only) and phone/SMS alert settings (pro only). Basic-plan
+    subscribers see what they'd get by upgrading rather than a dead end."""
+    subscriber = db.get_subscriber_by_token(token)
+    if not subscriber:
+        return "Not found", 404
+    patches = db.get_additional_patches(subscriber["id"]) if subscriber.get("plan") == "pro" else []
+    return render_template(
+        "account.html",
+        subscriber=subscriber,
+        patches=patches,
+        max_patches=db.MAX_ADDITIONAL_PATCHES,
+    )
+
+
+@app.route("/account/<token>/patches", methods=["POST"])
+def add_patch(token):
+    subscriber = db.get_subscriber_by_token(token)
+    if not subscriber:
+        return "Not found", 404
+    if subscriber.get("plan") == "pro":
+        postcode = request.form.get("postcode", "").strip().upper()
+        radius_km = float(request.form.get("radius_km") or 3.0)
+        keywords = request.form.get("keywords", "").strip() or subscriber["keywords"]
+        if postcode:
+            db.add_patch(subscriber["id"], postcode, radius_km, keywords)
+    return redirect(url_for("account", token=token))
+
+
+@app.route("/account/<token>/patches/<int:patch_id>/delete", methods=["POST"])
+def delete_patch(token, patch_id):
+    subscriber = db.get_subscriber_by_token(token)
+    if not subscriber:
+        return "Not found", 404
+    db.delete_patch(patch_id, subscriber["id"])
+    return redirect(url_for("account", token=token))
+
+
+@app.route("/account/<token>/notifications", methods=["POST"])
+def update_notifications(token):
+    subscriber = db.get_subscriber_by_token(token)
+    if not subscriber:
+        return "Not found", 404
+    if subscriber.get("plan") == "pro":
+        phone = request.form.get("phone", "").strip()
+        sms_opt_in = request.form.get("sms_opt_in") == "on"
+        db.update_notification_settings(subscriber["id"], phone, sms_opt_in)
+    return redirect(url_for("account", token=token))
+
+
 @app.route("/upgrade/<int:subscriber_id>")
 def upgrade(subscriber_id):
     subscriber = db.get_subscriber(subscriber_id)
@@ -245,6 +299,49 @@ def upgrade(subscriber_id):
 @app.route("/billing/not-configured")
 def billing_not_configured():
     return render_template("billing_not_configured.html")
+
+
+@app.route("/stripe/webhook", methods=["POST"])
+def stripe_webhook():
+    """
+    Without this, nothing ever actually flips a subscriber's plan/status
+    in the database after they pay — /upgrade sends them to Stripe
+    Checkout, but Checkout succeeding doesn't call back into this app on
+    its own. This is that callback.
+
+    Setup: in your Stripe dashboard, add a webhook endpoint pointing at
+    https://your-app-url/stripe/webhook, subscribed to at least the
+    "checkout.session.completed" event, then set STRIPE_WEBHOOK_SECRET to
+    the signing secret Stripe gives you for that endpoint.
+
+    Known gap: this only handles a successful checkout (upgrading someone
+    to their paid plan). It does not yet handle a cancelled/expired
+    subscription automatically downgrading them back to "basic" — that
+    needs the subscriber's Stripe customer id stored at checkout time to
+    reliably match a later cancellation event back to the right person,
+    which isn't wired up yet.
+    """
+    if not STRIPE_WEBHOOK_SECRET:
+        return jsonify({"error": "STRIPE_WEBHOOK_SECRET not configured"}), 503
+
+    payload = request.data
+    sig_header = request.headers.get("Stripe-Signature", "")
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
+    except Exception:
+        logger.exception("Stripe webhook signature verification failed")
+        return jsonify({"error": "invalid signature"}), 400
+
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+        email = session.get("customer_email") or (session.get("customer_details") or {}).get("email")
+        plan = (session.get("metadata") or {}).get("plan", "basic")
+        if email:
+            db.set_plan_by_email(email.strip().lower(), plan, status="active")
+        else:
+            logger.warning("Stripe checkout.session.completed with no customer email — could not update plan")
+
+    return jsonify({"ok": True})
 
 
 @app.route("/run-digest", methods=["GET", "POST"])
