@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS subscribers (
     referred_count INTEGER DEFAULT 0,
     phone TEXT,
     sms_opt_in TEXT DEFAULT '0',
+    sizes TEXT DEFAULT 'small,medium,large',
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -109,6 +110,7 @@ CREATE TABLE IF NOT EXISTS subscribers (
     referred_count INTEGER DEFAULT 0,
     phone TEXT,
     sms_opt_in TEXT DEFAULT '0',
+    sizes TEXT DEFAULT 'small,medium,large',
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -164,6 +166,7 @@ MIGRATIONS = [
     "ALTER TABLE subscribers ADD COLUMN referred_count INTEGER DEFAULT 0",
     "ALTER TABLE subscribers ADD COLUMN phone TEXT",
     "ALTER TABLE subscribers ADD COLUMN sms_opt_in TEXT DEFAULT '0'",
+    "ALTER TABLE subscribers ADD COLUMN sizes TEXT DEFAULT 'small,medium,large'",
     "ALTER TABLE sent_alerts ADD COLUMN address TEXT",
     "ALTER TABLE sent_alerts ADD COLUMN description TEXT",
     "ALTER TABLE sent_alerts ADD COLUMN link TEXT",
@@ -228,6 +231,7 @@ def init_db():
             "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS referred_count INTEGER DEFAULT 0",
             "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS phone TEXT",
             "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS sms_opt_in TEXT DEFAULT '0'",
+            "ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS sizes TEXT DEFAULT 'small,medium,large'",
             "ALTER TABLE sent_alerts ADD COLUMN IF NOT EXISTS address TEXT",
             "ALTER TABLE sent_alerts ADD COLUMN IF NOT EXISTS description TEXT",
             "ALTER TABLE sent_alerts ADD COLUMN IF NOT EXISTS link TEXT",
@@ -256,15 +260,16 @@ def add_subscriber(data: dict) -> int:
     _exec(
         conn,
         """INSERT INTO subscribers
-               (name, email, postcode, radius_km, keywords, frequency, plan, access_token)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+               (name, email, postcode, radius_km, keywords, frequency, plan, access_token, sizes)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(email) DO UPDATE SET
              postcode=excluded.postcode, radius_km=excluded.radius_km,
-             keywords=excluded.keywords, frequency=excluded.frequency""",
+             keywords=excluded.keywords, frequency=excluded.frequency,
+             sizes=excluded.sizes""",
         (
             data["name"], data["email"], data["postcode"],
             data.get("radius_km", 3.0), data["keywords"], data.get("frequency", "daily"),
-            data.get("plan", "basic"), new_token,
+            data.get("plan", "basic"), new_token, data.get("sizes", "small,medium,large"),
         ),
     )
     conn.commit()
