@@ -22,6 +22,7 @@
     <div class="results-list">
       {% for r in records %}
         <div class="mock-application">
+          {% if r._stage == 'approved' %}<span class="stage-badge stage-approved">Just approved</span>{% endif %}
           <p class="mock-app-address">{{ r.address }}</p>
           <p class="mock-app-desc">{{ r.description }}</p>
         </div>
@@ -29,9 +30,11 @@
     </div>
   {% else %}
     <p class="lede small">No matches for "{{ keywords }}" within {{ sample_radius|int }}km in the
-       last {{ sample_days }} days — and no other recent planning activity nearby either, so this
-       looks like a genuinely quiet patch right now. Your daily alert will keep watching the full
-       {{ radius_km|int }}km and 7 days, and we'll email you the moment something matches.</p>
+       last {{ sample_days }} days — and no other recent planning activity nearby either. That
+       usually means a genuinely quiet patch, though very occasionally it can mean your local
+       council reports into this data source more slowly than others. Your daily alert will keep
+       watching the full {{ radius_km|int }}km and 7 days, and we'll email you the moment
+       something matches.</p>
   {% endif %}
 
   <div class="card subscribe-card">
@@ -40,6 +43,7 @@
       <input type="hidden" name="postcode" value="{{ postcode }}">
       <input type="hidden" name="radius_km" value="{{ radius_km }}">
       <input type="hidden" name="keywords" value="{{ keywords }}">
+      <input type="hidden" name="ref" value="{{ ref|default('') }}">
       <label>Your name
         <input type="text" name="name" required placeholder="Dave Builder">
       </label>
@@ -47,6 +51,8 @@
         <input type="email" name="email" required placeholder="dave@example.com">
       </label>
       <button class="btn btn-primary btn-block" type="submit">Email me these + future matches</button>
+      <p class="hint" style="margin: 0;">We'll only use this to send your alerts — unsubscribe any
+         time from a link in every email. See our <a href="{{ url_for('privacy') }}">Privacy Policy</a>.</p>
     </form>
   </div>
 
