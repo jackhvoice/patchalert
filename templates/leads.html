@@ -31,6 +31,7 @@
   {% endif %}
 
   <p class="lede small" style="margin-top: 1.5rem;">
+    <a href="{{ url_for('account', token=subscriber.access_token) }}">Manage patches &amp; alerts</a> ·
     <a href="{{ url_for('signup') }}">Adjust your search settings</a> ·
     <a href="{{ url_for('unsubscribe', token=subscriber.access_token) }}">Unsubscribe</a>
   </p>
