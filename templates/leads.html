@@ -9,10 +9,17 @@
   {% if not sent %}
     <p class="lede small">Nothing sent yet — once your first alert goes out, it'll show up here.</p>
   {% else %}
+    <div class="lead-filters" id="lead-filters">
+      <button type="button" class="filter-pill active" data-filter="all">All ({{ sent|length }})</button>
+      <button type="button" class="filter-pill" data-filter="new">New ({{ status_counts.new }})</button>
+      <button type="button" class="filter-pill" data-filter="contacted">Contacted ({{ status_counts.contacted }})</button>
+      <button type="button" class="filter-pill" data-filter="won">Won ({{ status_counts.won }})</button>
+      <button type="button" class="filter-pill" data-filter="lost">Lost ({{ status_counts.lost }})</button>
+    </div>
     <div class="results-list">
       {% for r in sent %}
         {% set current = statuses.get(r.application_uid, {}) %}
-        <div class="mock-application lead-row">
+        <div class="mock-application lead-row" data-status="{{ current.get('status', 'new') }}">
           {% if r.stage == 'approved' %}<span class="stage-badge stage-approved">Was just approved</span>{% endif %}
           <p class="mock-app-address">{{ r.address or ("Reference " ~ r.application_uid) }}</p>
           {% if r.description %}<p class="mock-app-desc">{{ r.description }}</p>{% endif %}
@@ -36,4 +43,28 @@
     <a href="{{ url_for('unsubscribe', token=subscriber.access_token) }}">Unsubscribe</a>
   </p>
 </section>
+
+<script>
+  (function () {
+    // Pure client-side show/hide — no page reload, and it works off the
+    // data-status attribute already rendered server-side, so it stays in
+    // sync with whatever status was last saved (the status dropdown still
+    // submits/reloads the page as before; this only filters what's shown).
+    var filterBar = document.getElementById("lead-filters");
+    if (!filterBar) return;
+    var buttons = filterBar.querySelectorAll(".filter-pill");
+    var rows = document.querySelectorAll(".lead-row");
+    buttons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        buttons.forEach(function (b) { b.classList.remove("active"); });
+        btn.classList.add("active");
+        var filter = btn.getAttribute("data-filter");
+        rows.forEach(function (row) {
+          var show = filter === "all" || row.getAttribute("data-status") === filter;
+          row.style.display = show ? "" : "none";
+        });
+      });
+    });
+  })();
+</script>
 {% endblock %}
