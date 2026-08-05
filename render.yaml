@@ -32,7 +32,7 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 75
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 600
     envVars:
       - key: PLANIT_USE_FIXTURE
         value: "0"   # switch to the real PlanIt API once deployed — see planit_client.py
