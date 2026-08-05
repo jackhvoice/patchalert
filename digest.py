@@ -7,6 +7,7 @@ pipeline stays demonstrable without real credentials.
 
 import os
 from datetime import datetime
+from html import escape as _esc
 from pathlib import Path
 
 import requests
@@ -92,7 +93,7 @@ def _trial_expired(subscriber: dict) -> bool:
     return (datetime.utcnow() - created).days > TRIAL_DAYS
 
 
-def _trial_ended_email(subscriber: dict) -> tuple[str, str, list]:
+def _trial_ended_email(subscriber: dict) -> tuple[str, str, str, list]:
     upgrade_link = _url(f"/upgrade/{subscriber['id']}")
     subject = "Your PatchAlert free trial has ended"
     body = (
@@ -104,7 +105,25 @@ def _trial_ended_email(subscriber: dict) -> tuple[str, str, list]:
         "If you'd rather not continue, no action needed — you simply won't receive "
         "further alerts, and nothing has been charged."
     )
-    return subject, body, []
+    body_html = f"""
+      <p style="margin:0 0 16px; font-size:15px; color:#182430;">Hi {_esc(subscriber['name'])},</p>
+      <p style="margin:0 0 16px; font-size:14px; color:#182430; line-height:1.6;">
+        Your {TRIAL_DAYS}-day free trial of PatchAlert has ended, so alerts for
+        <strong>{_esc(subscriber['postcode'])}</strong> are paused for now.
+      </p>
+      <p style="margin:0 0 20px;">
+        <a href="{_esc(upgrade_link)}" style="display:inline-block; background:#EF6A33; color:#FFFFFF;
+           font-weight:700; font-size:14px; text-decoration:none; padding:12px 22px; border-radius:999px;">
+          Subscribe to keep your alerts
+        </a>
+      </p>
+      <p style="margin:0; font-size:13px; color:#667085;">
+        If you'd rather not continue, no action needed — you simply won't receive further
+        alerts, and nothing has been charged.
+      </p>
+    """
+    html_body = _html_wrapper(body_html, "")
+    return subject, body, html_body, []
 
 
 def _footer_lines(subscriber: dict) -> list:
@@ -168,9 +187,123 @@ def _describe(r: dict, show_patch: bool) -> list:
     return out
 
 
-def build_digest_for_subscriber(subscriber: dict, preview: bool = False) -> tuple[str, str, list[dict]]:
+# ---------- HTML email rendering ----------
+# All PlanIt-sourced text (address, description, agent_name, etc.) is
+# escaped before being embedded in HTML — this is third-party data from
+# council planning registers, not something we control, and descriptions
+# routinely contain "&" and similar characters that would otherwise break
+# the markup. Inline styles only (no <style> block/external CSS) and a
+# table-based layout, since that's what actually renders consistently
+# across real-world email clients (Gmail, Outlook, Apple Mail).
+
+_BRAND_NAVY_DARK = "#0B1F33"
+_BRAND_NAVY = "#14304D"
+_BRAND_ORANGE = "#EF6A33"
+_BRAND_INK = "#182430"
+_BRAND_MUTED = "#667085"
+_BRAND_MUTED_LIGHT = "#98A2B3"
+_BRAND_CREAM = "#FBF7F2"
+_BRAND_BORDER = "#E8E1D6"
+
+
+def _describe_html(r: dict, show_patch: bool) -> str:
+    patch_tag = ""
+    if show_patch and r.get("_patch_label"):
+        patch_tag = f' <span style="color:{_BRAND_MUTED}; font-weight:500;">[{_esc(r["_patch_label"])}]</span>'
+    agent_line = ""
+    if r.get("agent_name"):
+        agent_line = (
+            f'<p style="margin:0 0 6px; color:{_BRAND_MUTED}; font-size:13px;">'
+            f'Agent/architect: {_esc(r["agent_name"])}</p>'
+        )
+    is_approved = r.get("_stage") == "approved"
+    border = _BRAND_ORANGE if is_approved else _BRAND_BORDER
+    bg = "#FFF6F0" if is_approved else "#FFFFFF"
+    badge = ""
+    if is_approved:
+        badge = (
+            f'<span style="display:inline-block; background:{_BRAND_ORANGE}; color:#FFFFFF; '
+            f'font-size:11px; font-weight:700; letter-spacing:0.03em; padding:3px 10px; '
+            f'border-radius:999px; margin-bottom:8px;">JUST APPROVED</span><br>'
+        )
+    return f"""
+    <div style="border:1px solid {border}; background:{bg}; border-radius:9px; padding:14px 16px; margin-bottom:12px;">
+      {badge}
+      <p style="margin:0 0 4px; font-weight:700; color:{_BRAND_INK}; font-size:15px;">{_esc(r.get('address',''))}{patch_tag}</p>
+      <p style="margin:0 0 8px; color:{_BRAND_MUTED}; font-size:14px;">{_esc(r.get('description',''))}</p>
+      {agent_line}
+      <p style="margin:0 0 8px; color:{_BRAND_MUTED_LIGHT}; font-size:12px;">
+        Reference: {_esc(r.get('uid',''))} &middot; Submitted: {_esc(r.get('start_date',''))}
+      </p>
+      <p style="margin:0;">
+        <a href="{_esc(r.get('link',''))}" style="color:{_BRAND_NAVY}; font-weight:600; font-size:13px; text-decoration:none;">
+          View full application &rarr;
+        </a>
+      </p>
+    </div>"""
+
+
+def _footer_links_html(subscriber: dict) -> str:
+    token = subscriber.get("access_token")
+    if not token:
+        return ""
+    leads_url = _url(f"/leads/{token}")
+    account_url = _url(f"/account/{token}")
+    referral_url = _url(f"/signup?ref={token}")
+    unsub_url = _url(f"/unsubscribe/{token}")
+    return f"""
+    <p style="margin:0 0 10px; font-size:13px;">
+      <a href="{_esc(leads_url)}" style="color:{_BRAND_NAVY}; font-weight:600; text-decoration:none;">Your leads so far</a>
+      &nbsp;&middot;&nbsp;
+      <a href="{_esc(account_url)}" style="color:{_BRAND_NAVY}; font-weight:600; text-decoration:none;">Manage settings</a>
+    </p>
+    <p style="margin:0 0 10px; font-size:12px; color:{_BRAND_MUTED};">
+      Know another trade who'd find this useful? Forward this email, or send them to:
+      <a href="{_esc(referral_url)}" style="color:{_BRAND_NAVY}; text-decoration:none;">{_esc(referral_url)}</a>
+    </p>
+    <p style="margin:0; font-size:12px; color:{_BRAND_MUTED_LIGHT};">
+      <a href="{_esc(unsub_url)}" style="color:{_BRAND_MUTED_LIGHT}; text-decoration:underline;">Unsubscribe</a>
+    </p>"""
+
+
+def _html_wrapper(body_html: str, footer_html: str) -> str:
+    footer_block = ""
+    if footer_html:
+        footer_block = f"""
+          <tr>
+            <td style="padding: 18px 28px 24px; background:{_BRAND_CREAM}; border-top:1px solid {_BRAND_BORDER};">
+              {footer_html}
+            </td>
+          </tr>"""
+    return f"""<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0; padding:0; background:{_BRAND_CREAM}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{_BRAND_CREAM};">
+    <tr>
+      <td align="center" style="padding: 24px 16px;">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%; background:#FFFFFF; border-radius:14px; overflow:hidden; border:1px solid {_BRAND_BORDER};">
+          <tr>
+            <td style="background:{_BRAND_NAVY_DARK}; padding: 18px 28px;">
+              <span style="color:#FFFFFF; font-size:18px; font-weight:700; font-family: Georgia, 'Times New Roman', serif;">PatchAlert</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 28px 28px 8px;">
+              {body_html}
+            </td>
+          </tr>{footer_block}
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
+
+
+def build_digest_for_subscriber(subscriber: dict, preview: bool = False) -> tuple[str, str, str, list[dict]]:
     """
-    Returns (subject, body_text, new_records) for one subscriber.
+    Returns (subject, body_text, body_html, new_records) for one subscriber.
 
     When preview=True, this escalates through PREVIEW_SEARCH_TIERS above
     rather than a single fixed search — see that constant's comment for why.
@@ -268,25 +401,32 @@ def build_digest_for_subscriber(subscriber: dict, preview: bool = False) -> tupl
     if not new_records:
         if not preview and multi_patch:
             subject = "No new matching planning applications across your patches today"
-            body = (
-                f"Hi {subscriber['name']},\n\n"
+            message = (
                 f"No new planning applications matching your alerts across the "
                 f"{len(_subscriber_patches(subscriber))} patches you're watching, since your "
-                "last alert.\n\nWe'll keep watching and email you as soon as something new comes up."
+                "last alert."
             )
         else:
             subject = f"No new matching planning applications near {subscriber['postcode']} today"
-            body = (
-                f"Hi {subscriber['name']},\n\n"
+            message = (
                 f"No new planning applications matching '{subscriber['keywords']}' within "
                 f"{effective_radius:.0f}km of {subscriber['postcode']} since your last alert"
-                f"{scope_note}.\n\n"
-                "We'll keep watching and email you as soon as something new comes up."
+                f"{scope_note}."
             )
+        body = f"Hi {subscriber['name']},\n\n{message}\n\nWe'll keep watching and email you as soon as something new comes up."
         body += "\n" + "\n".join(_footer_lines(subscriber))
-        return subject, body, []
+        body_html_content = f"""
+          <p style="margin:0 0 16px; font-size:15px; color:{_BRAND_INK};">Hi {_esc(subscriber['name'])},</p>
+          <p style="margin:0 0 16px; font-size:14px; color:{_BRAND_INK}; line-height:1.6;">{_esc(message)}</p>
+          <p style="margin:0 0 20px; font-size:14px; color:{_BRAND_MUTED};">
+            We'll keep watching and email you as soon as something new comes up.
+          </p>
+        """
+        html_body = _html_wrapper(body_html_content, _footer_links_html(subscriber))
+        return subject, body, html_body, []
 
     lines = [f"Hi {subscriber['name']},", ""]
+    html_sections = [f'<p style="margin:0 0 16px; font-size:15px; color:{_BRAND_INK};">Hi {_esc(subscriber["name"])},</p>']
 
     if approved:
         lines.append(
@@ -296,24 +436,40 @@ def build_digest_for_subscriber(subscriber: dict, preview: bool = False) -> tupl
         lines.append("")
         for r in approved:
             lines.extend(_describe(r, multi_patch))
+        html_sections.append(
+            f'<p style="margin:0 0 12px; font-size:14px; color:{_BRAND_INK}; font-weight:600;">'
+            f'{len(approved)} of these just got approved — the best moment to reach out, before '
+            f'other trades even hear about it:</p>'
+        )
+        html_sections.extend(_describe_html(r, multi_patch) for r in approved)
 
     if rest:
         if approved:
-            lines.append("Also newly submitted:")
+            rest_heading = "Also newly submitted:"
         elif multi_patch:
-            lines.append(f"{len(rest)} new planning application(s) across your watched patches:")
+            rest_heading = f"{len(rest)} new planning application(s) across your watched patches:"
         else:
-            lines.append(
+            rest_heading = (
                 f"{len(rest)} new planning application(s) matching your alert "
                 f"('{subscriber['keywords']}' within {effective_radius:.0f}km of "
                 f"{subscriber['postcode']}){scope_note}:"
             )
+        lines.append(rest_heading)
         lines.append("")
         for r in rest:
             lines.extend(_describe(r, multi_patch))
+        html_sections.append(
+            f'<p style="margin:{"20px" if approved else "0"} 0 12px; font-size:14px; color:{_BRAND_INK}; font-weight:600;">'
+            f'{_esc(rest_heading)}</p>'
+        )
+        html_sections.extend(_describe_html(r, multi_patch) for r in rest)
 
     lines.append("Reach out early — you'll usually be first to know before local competitors.")
     lines.extend(_footer_lines(subscriber))
+    html_sections.append(
+        f'<p style="margin:20px 0 0; font-size:13px; color:{_BRAND_MUTED};">'
+        f'Reach out early — you\'ll usually be first to know before local competitors.</p>'
+    )
 
     if approved and rest:
         subject = f"{len(approved)} newly approved + {len(rest)} new application(s) near {subscriber['postcode']}"
@@ -323,15 +479,23 @@ def build_digest_for_subscriber(subscriber: dict, preview: bool = False) -> tupl
         subject = f"{len(new_records)} new planning application(s) near {subscriber['postcode']}"
 
     body = "\n".join(lines)
-    return subject, body, new_records
+    html_body = _html_wrapper("".join(html_sections), _footer_links_html(subscriber))
+    return subject, body, html_body, new_records
 
 
-def send_email(to_email: str, subject: str, body: str):
+def send_email(to_email: str, subject: str, body: str, html: str | None = None):
     """
     Sends via the Resend API (https://resend.com) if RESEND_API_KEY is
     set. Otherwise falls back to writing the 'email' to disk under
     outbox/ so the whole pipeline stays demonstrable and testable without
     real credentials.
+
+    `html`, if provided, is sent alongside the plain-text body — Resend
+    (like virtually every email provider) accepts both in the same
+    message, and mail clients that support HTML show that version while
+    plain-text-only clients fall back to `body`. Passing html=None keeps
+    this a plain-text-only send (used for the outbox/no-API-key path,
+    where there's no real client rendering anything anyway).
     """
     if not RESEND_API_KEY:
         safe_ts = datetime.now().strftime("%Y%m%dT%H%M%S_%f")
@@ -339,15 +503,19 @@ def send_email(to_email: str, subject: str, body: str):
         out_path.write_text(f"To: {to_email}\nSubject: {subject}\n\n{body}\n")
         return str(out_path)
 
+    payload = {
+        "from": RESEND_FROM_ADDRESS,
+        "to": [to_email],
+        "subject": subject,
+        "text": body,
+    }
+    if html:
+        payload["html"] = html
+
     resp = requests.post(
         "https://api.resend.com/emails",
         headers={"Authorization": f"Bearer {RESEND_API_KEY}"},
-        json={
-            "from": RESEND_FROM_ADDRESS,
-            "to": [to_email],
-            "subject": subject,
-            "text": body,
-        },
+        json=payload,
         timeout=15,
     )
     resp.raise_for_status()
@@ -416,8 +584,8 @@ def run_daily_digest() -> list[dict]:
     summary = []
     for subscriber in db.get_all_subscribers():
         try:
-            subject, body, new_records = build_digest_for_subscriber(subscriber)
-            send_result = send_email(subscriber["email"], subject, body)
+            subject, body, html_body, new_records = build_digest_for_subscriber(subscriber)
+            send_result = send_email(subscriber["email"], subject, body, html=html_body)
             sms_result = _maybe_send_sms(subscriber, new_records)
             for r in new_records:
                 db.mark_sent(
