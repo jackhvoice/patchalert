@@ -253,4 +253,138 @@ def account(token):
     if ENFORCE_BILLING and subscriber.get("plan") != "pro" and subscriber.get("subscription_status") != "active":
         created = db.parse_timestamp(subscriber.get("created_at"))
         if created:
-            trial_days_left = max(TRIAL_DAYS -
+            trial_days_left = max(TRIAL_DAYS - (datetime.utcnow() - created).days, 0)
+
+    return render_template(
+        "account.html",
+        subscriber=subscriber,
+        patches=patches,
+        max_patches=db.MAX_ADDITIONAL_PATCHES,
+        trial_days_left=trial_days_left,
+    )
+
+
+@app.route("/account/<token>/patches", methods=["POST"])
+def add_patch(token):
+    subscriber = db.get_subscriber_by_token(token)
+    if not subscriber:
+        return "Not found", 404
+    if subscriber.get("plan") == "pro":
+        postcode = request.form.get("postcode", "").strip().upper()
+        radius_km = float(request.form.get("radius_km") or 3.0)
+        keywords = request.form.get("keywords", "").strip() or subscriber["keywords"]
+        if postcode:
+            db.add_patch(subscriber["id"], postcode, radius_km, keywords)
+    return redirect(url_for("account", token=token))
+
+
+@app.route("/account/<token>/patches/<int:patch_id>/delete", methods=["POST"])
+def delete_patch(token, patch_id):
+    subscriber = db.get_subscriber_by_token(token)
+    if not subscriber:
+        return "Not found", 404
+    db.delete_patch(patch_id, subscriber["id"])
+    return redirect(url_for("account", token=token))
+
+
+@app.route("/account/<token>/notifications", methods=["POST"])
+def update_notifications(token):
+    subscriber = db.get_subscriber_by_token(token)
+    if not subscriber:
+        return "Not found", 404
+    if subscriber.get("plan") == "pro":
+        phone = request.form.get("phone", "").strip()
+        sms_opt_in = request.form.get("sms_opt_in") == "on"
+        db.update_notification_settings(subscriber["id"], phone, sms_opt_in)
+    return redirect(url_for("account", token=token))
+
+
+@app.route("/upgrade/<int:subscriber_id>")
+def upgrade(subscriber_id):
+    subscriber = db.get_subscriber(subscriber_id)
+    if not subscriber:
+        return "Not found", 404
+    plan = request.args.get("plan", "basic")
+    if plan not in ("basic", "pro"):
+        plan = "basic"
+    checkout_url = create_checkout_session(
+        subscriber["email"],
+        success_url=url_for("preview", subscriber_id=subscriber_id, _external=True),
+        cancel_url=url_for("preview", subscriber_id=subscriber_id, _external=True),
+        plan=plan,
+    )
+    return redirect(checkout_url)
+
+
+@app.route("/billing/not-configured")
+def billing_not_configured():
+    return render_template("billing_not_configured.html")
+
+
+@app.route("/stripe/webhook", methods=["POST"])
+def stripe_webhook():
+    """
+    Without this, nothing ever actually flips a subscriber's plan/status
+    in the database after they pay — /upgrade sends them to Stripe
+    Checkout, but Checkout succeeding doesn't call back into this app on
+    its own. This is that callback.
+
+    Setup: in your Stripe dashboard, add a webhook endpoint pointing at
+    https://your-app-url/stripe/webhook, subscribed to at least the
+    "checkout.session.completed" event, then set STRIPE_WEBHOOK_SECRET to
+    the signing secret Stripe gives you for that endpoint.
+
+    Known gap: this only handles a successful checkout (upgrading someone
+    to their paid plan). It does not yet handle a cancelled/expired
+    subscription automatically downgrading them back to "basic" — that
+    needs the subscriber's Stripe customer id stored at checkout time to
+    reliably match a later cancellation event back to the right person,
+    which isn't wired up yet.
+    """
+    if not STRIPE_WEBHOOK_SECRET:
+        return jsonify({"error": "STRIPE_WEBHOOK_SECRET not configured"}), 503
+
+    payload = request.data
+    sig_header = request.headers.get("Stripe-Signature", "")
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
+    except Exception:
+        logger.exception("Stripe webhook signature verification failed")
+        return jsonify({"error": "invalid signature"}), 400
+
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+        email = session.get("customer_email") or (session.get("customer_details") or {}).get("email")
+        plan = (session.get("metadata") or {}).get("plan", "basic")
+        if email:
+            db.set_plan_by_email(email.strip().lower(), plan, status="active")
+        else:
+            logger.warning("Stripe checkout.session.completed with no customer email — could not update plan")
+
+    return jsonify({"ok": True})
+
+
+@app.route("/run-digest", methods=["GET", "POST"])
+def run_digest_endpoint():
+    """
+    Triggers the daily digest run over HTTP, so a free external scheduler
+    (e.g. cron-job.org, or a GitHub Actions scheduled workflow doing
+    `curl`) can fire it once a day without needing a paid hosting tier
+    with built-in cron. Protected by a shared-secret token so randoms on
+    the internet can't trigger it or see subscriber data.
+
+    Set DIGEST_TRIGGER_SECRET as an environment variable on your host,
+    then point your scheduler at:
+        https://your-app-url/run-digest?token=YOUR_SECRET
+    """
+    if not DIGEST_TRIGGER_SECRET:
+        return jsonify({"error": "DIGEST_TRIGGER_SECRET not configured on this deployment"}), 503
+    token = request.args.get("token") or request.headers.get("X-Digest-Token")
+    if token != DIGEST_TRIGGER_SECRET:
+        return jsonify({"error": "unauthorized"}), 403
+    summary = run_daily_digest()
+    return jsonify({"ok": True, "results": summary})
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5002, debug=True)
