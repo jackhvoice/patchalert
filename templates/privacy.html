@@ -1,69 +1,51 @@
 {% extends "base.html" %}
-{% block title %}Results near {{ postcode }} — PatchAlert{% endblock %}
-{% block robots_meta %}noindex, nofollow{% endblock %}
-{% block extra_head %}
-{% if map_center %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-{% endif %}
-{% endblock %}
+{% block title %}Privacy Policy — PatchAlert{% endblock %}
+{% block meta_description %}How PatchAlert collects and uses your data for our UK planning application alert emails.{% endblock %}
 {% block content %}
-<section class="results-page-layout">
-  <div class="results-main">
-    <h1>Here's what's happening near {{ postcode }}</h1>
+<section class="preview-layout">
+  <h1>Privacy Policy</h1>
+  <p class="lede small">Draft starting point — reviewed for plain-English clarity but not by a
+     solicitor. Have this properly reviewed before you rely on it once PatchAlert has real paying
+     customers, ideally alongside registering with the ICO if you don't have a data protection
+     registration already.</p>
 
-    {% if map_center %}
-      <div id="results-map" class="results-map" aria-label="Map showing your search radius near {{ postcode }}"></div>
-    {% endif %}
+  <h3>What we collect</h3>
+  <p>When you search on this site: the postcode and radius you enter, purely to run that one
+     search — this isn't saved unless you subscribe. When you subscribe: your name, email
+     address, postcode, search radius, and chosen trade keywords, so we can send your alerts.</p>
 
-    {% if records is none %}
-      <p class="lede small">We couldn't fetch live results just now — the planning-data source
-         didn't respond in time. This is usually temporary. You can
-         <a href="{{ url_for('signup') }}">try your search again</a>, or just sign up and
-         we'll keep watching for you regardless.</p>
-    {% elif records %}
-      {% if matched_keywords %}
-        <p class="lede small">Matching "{{ keywords }}" near {{ postcode }} — your daily alert will
-           keep watching this {{ radius_km|int }}km radius, every 7 days, for anything new.</p>
-      {% else %}
-        <p class="lede small">Nothing matched "{{ keywords }}" specifically nearby just now, but here's
-           other real planning activity nearby — proof there's genuine data flowing for your area.
-           Your daily alert will keep watching specifically for "{{ keywords }}" within your full
-           {{ radius_km|int }}km radius.</p>
-      {% endif %}
+  <h3>Why we collect it</h3>
+  <p>Solely to run the alert service you signed up for — matching new planning applications to
+     your patch and emailing you when one comes up. We don't sell or share your details with
+     advertisers.</p>
 
-      {% set approved_count = records | selectattr("_stage", "equalto", "approved") | list | length %}
-      {% if approved_count %}
-        <div class="filter-bar" id="results-filters">
-          <button type="button" class="filter-pill active" data-filter="all">All ({{ records|length }})</button>
-          <button type="button" class="filter-pill" data-filter="approved">Just approved ({{ approved_count }})</button>
-        </div>
-      {% endif %}
+  <h3>Where the planning data comes from</h3>
+  <p>Every planning application referenced in an alert is public record, published by the
+     relevant local council and aggregated by <a href="https://www.planit.org.uk/" target="_blank" rel="noopener">UK PlanIt</a>.
+     We don't collect or infer anything about the applicant beyond what's already public on the
+     planning register.</p>
 
-      <div class="results-list" id="results-cards">
-        {% for r in records %}
-          <div class="mock-application{% if r._stage == 'approved' %} stage-approved-card{% endif %}" data-stage="{{ r._stage }}">
-            {% if r._stage == 'approved' %}<span class="stage-badge stage-approved">Just approved</span>{% endif %}
-            <p class="mock-app-address">{{ r.address }}</p>
-            <p class="mock-app-desc">{{ r.description }}</p>
-          </div>
-        {% endfor %}
-      </div>
-    {% else %}
-      <p class="lede small">No matches for "{{ keywords }}" nearby recently — and no other recent
-         planning activity nearby either. That usually means a genuinely quiet patch, though very
-         occasionally it can mean your local council reports into this data source more slowly than
-         others. Your daily alert will keep watching your full {{ radius_km|int }}km radius, and
-         we'll email you the moment something matches.</p>
-    {% endif %}
+  <h3>Other services we use</h3>
+  <p>Your postcode is converted to a map location via postcodes.io (a free UK postcode lookup
+     service) purely to run the search — no account or personal data is created there. Emails are
+     sent via Resend, an email delivery service; your email address is passed to them only to
+     deliver your alert. If you subscribe to a paid plan, your payment is handled by Stripe — we
+     don't see or store your card details ourselves.</p>
 
-    <p class="lede small" style="margin-top: 1rem;">
-      <a href="{{ url_for('signup') }}">Search a different postcode or trade</a>
-    </p>
-  </div>
+  <h3>How long we keep it</h3>
+  <p>For as long as you're subscribed. If you unsubscribe, we stop sending alerts immediately;
+     your record is kept only so we don't accidentally re-add you later, but is no longer acted
+     on. Email us if you'd like your data deleted entirely.</p>
 
-  <aside class="results-sidebar">
-    <div class="card subscribe-card">
-      <h3>Get this delivered daily</h3>
+  <h3>Your rights</h3>
+  <p>You can unsubscribe at any time using the link in every alert email. Under UK GDPR you can
+     also ask what data we hold about you, ask us to correct it, or ask us to delete it entirely —
+     just get in touch.</p>
+
+  <h3>Contact</h3>
+  <p>jack.voice@outlook.com</p>
+</section>
+{% endblock %}      <h3>Get this delivered daily</h3>
       <form method="post" action="{{ url_for('subscribe') }}" class="form">
         <input type="hidden" name="postcode" value="{{ postcode }}">
         <input type="hidden" name="radius_km" value="{{ radius_km }}">
