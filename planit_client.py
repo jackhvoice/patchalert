@@ -55,12 +55,17 @@ def _normalize_postcode(postcode: str) -> str:
     return compact
 
 
-def _geocode_postcode(postcode: str) -> tuple[float, float]:
+def geocode_postcode(postcode: str) -> tuple[float, float]:
     """
     Converts a UK postcode to (latitude, longitude) via postcodes.io — a
     free, fast, no-key-required UK postcode lookup service. See the module
     docstring for why we do this ourselves instead of letting PlanIt
     geocode the raw postcode.
+
+    Public (no leading underscore) because app.py also calls this
+    directly to center the results-page map on the searched postcode —
+    that's a separate concern from fetch_applications() below, which
+    calls this too but only to build its own PlanIt query.
     """
     compact = postcode.replace(" ", "").upper()
     resp = requests.get(f"{GEOCODE_BASE}/{compact}", timeout=8)
@@ -132,7 +137,7 @@ def fetch_applications(
             r["_stage"] = stage_of(r)
         return records
 
-    lat, lng = _geocode_postcode(postcode)
+    lat, lng = geocode_postcode(postcode)
 
     params = {
         "lat": lat,
