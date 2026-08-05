@@ -143,10 +143,23 @@ def fetch_applications(
         # Ask PlanIt for only the fields we actually use — a smaller
         # response is faster for them to build and for us to receive,
         # which helps avoid the read timeout a full-fat response can hit.
-        # app_state/decided_date/agent_name power the "just approved" and
-        # agent-name features in digest.py — see stage_of() above for why
-        # these are handled defensively if the names turn out to differ.
-        "select": "uid,area_name,start_date,address,description,link,app_state,decided_date,agent_name",
+        # app_state/decided_date power the "just approved" feature in
+        # digest.py — see stage_of() above for why these are handled
+        # defensively if the names turn out to differ.
+        #
+        # NOTE: "agent_name" was in this list originally but a live
+        # production request confirmed PlanIt's real API rejects it
+        # outright with a 400 ("column pgrst_call.agent_name does not
+        # exist") rather than just omitting it — unlike an unrecognised
+        # *value* (handled defensively elsewhere), an unrecognised
+        # *field name* here breaks the entire request, so it's removed.
+        # This means the "Agent/architect" line in digest.py's email
+        # rendering will never populate against real data (only in the
+        # bundled fixture, which does include it) — the code already
+        # handles that gracefully since it's only shown when present, but
+        # it's a feature that quietly won't do anything for real
+        # subscribers unless a correct field name is found later.
+        "select": "uid,area_name,start_date,address,description,link,app_state,decided_date",
     }
 
     headers = {
