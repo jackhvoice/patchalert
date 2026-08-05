@@ -190,6 +190,19 @@ fieldset legend { font-size: 0.9rem; font-weight: 600; color: var(--navy-dark); 
 .results-list { display: flex; flex-direction: column; gap: 0.6rem; margin: 1.2rem 0; }
 .subscribe-card { margin-top: 1.5rem; max-width: 420px; }
 
+/* ---------- Stage badges + leads dashboard ---------- */
+.stage-badge {
+  display: inline-block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.04em; padding: 0.2rem 0.55rem; border-radius: 999px; margin-bottom: 0.4rem;
+}
+.stage-approved { background: rgba(239, 106, 51, 0.15); color: var(--orange-dark); }
+.lead-row { display: flex; flex-direction: column; gap: 0.3rem; position: relative; }
+.lead-status-form { margin-top: 0.4rem; }
+.lead-status-form select {
+  padding: 0.35rem 0.6rem; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  font-family: var(--font-body); font-size: 0.85rem; background: white;
+}
+
 /* ---------- Search progress overlay ---------- */
 .search-progress-overlay {
   position: fixed; inset: 0; background: rgba(11, 31, 51, 0.94); color: white;
