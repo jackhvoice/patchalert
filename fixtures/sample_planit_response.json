@@ -11,8 +11,11 @@
       "location": {"lat": 53.8241, "lng": -1.5765},
       "link": "https://www.planit.org.uk/planapp/2026/1043/HOU",
       "last_scraped": "2026-08-03T06:12:00Z",
-      "app_state": "Undecided",
-      "app_type": "HOU"
+      "app_state": "Permitted",
+      "decided_date": "2026-08-03",
+      "agent_name": "Ashfield Design & Planning Ltd",
+      "app_type": "HOU",
+      "app_size": "Small"
     },
     {
       "uid": "2026/0987/FUL",
@@ -26,7 +29,8 @@
       "link": "https://www.planit.org.uk/planapp/2026/0987/FUL",
       "last_scraped": "2026-08-03T06:12:00Z",
       "app_state": "Undecided",
-      "app_type": "FUL"
+      "app_type": "FUL",
+      "app_size": "Small"
     },
     {
       "uid": "2026/1011/HOU",
@@ -40,7 +44,8 @@
       "link": "https://www.planit.org.uk/planapp/2026/1011/HOU",
       "last_scraped": "2026-08-03T06:12:00Z",
       "app_state": "Undecided",
-      "app_type": "HOU"
+      "app_type": "HOU",
+      "app_size": "Small"
     },
     {
       "uid": "2026/0899/LBC",
@@ -54,11 +59,27 @@
       "link": "https://www.planit.org.uk/planapp/2026/0899/LBC",
       "last_scraped": "2026-08-03T06:12:00Z",
       "app_state": "Undecided",
-      "app_type": "LBC"
+      "app_type": "LBC",
+      "app_size": "Medium"
+    },
+    {
+      "uid": "2026/0765/FUL",
+      "name": "2026/0765/FUL",
+      "area_name": "Leeds",
+      "area_id": 245,
+      "start_date": "2026-07-15",
+      "address": "Riverside Wharf, Leeds, LS1 4DY",
+      "description": "Erection of a 40-unit residential apartment block with commercial ground floor units",
+      "location": {"lat": 53.7955, "lng": -1.5423},
+      "link": "https://www.planit.org.uk/planapp/2026/0765/FUL",
+      "last_scraped": "2026-08-03T06:12:00Z",
+      "app_state": "Undecided",
+      "app_type": "FUL",
+      "app_size": "Large"
     }
   ],
   "from": 0,
-  "to": 4,
-  "total": 4,
+  "to": 5,
+  "total": 5,
   "secs_taken": 0.08
 }
