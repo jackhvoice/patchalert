@@ -1,193 +1,25 @@
-/* ---------- Design tokens ---------- */
-:root {
-  --navy: #14304D;
-  --navy-dark: #0B1F33;
-  --ink: #182430;
-  --muted: #667085;
-  --orange: #EF6A33;
-  --orange-dark: #D2551F;
-  --cream: #FBF7F2;
-  --card: #FFFFFF;
-  --border: #E8E1D6;
-  --border-soft: #F0EBE2;
-  --shadow: 0 10px 30px -12px rgba(20, 48, 77, 0.18);
-  --shadow-sm: 0 2px 10px rgba(20, 48, 77, 0.06);
-  --radius: 14px;
-  --radius-sm: 9px;
-  --font-head: "Sora", -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
-* { box-sizing: border-box; }
-
-html { scroll-behavior: smooth; }
-
-body {
-  font-family: var(--font-body);
-  margin: 0;
-  color: var(--ink);
-  background: var(--cream);
-  line-height: 1.55;
-  -webkit-font-smoothing: antialiased;
-}
-
-h1, h2, h3 { font-family: var(--font-head); color: var(--navy-dark); line-height: 1.15; margin: 0 0 0.5rem; }
-h1 { font-size: clamp(1.9rem, 3.2vw, 2.6rem); font-weight: 800; letter-spacing: -0.01em; }
-h2 { font-size: 1.6rem; font-weight: 700; }
-h3 { font-size: 1.05rem; font-weight: 700; }
-p { margin: 0 0 0.9rem; }
-a { color: var(--navy); }
-
-/* ---------- Topbar ---------- */
-.topbar {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 1.1rem 2.5rem; background: var(--cream);
-}
-.brand {
-  display: flex; align-items: center; gap: 0.5rem;
-  font-family: var(--font-head); font-weight: 700; font-size: 1.15rem;
-  color: var(--navy-dark); text-decoration: none;
-}
-.brand-mark { color: var(--orange); display: inline-flex; }
-.nav-cta {
-  background: var(--navy-dark); color: white; text-decoration: none;
-  padding: 0.55rem 1.1rem; border-radius: 999px; font-weight: 600; font-size: 0.9rem;
-  transition: background 0.15s ease;
-}
-.nav-cta:hover { background: var(--navy); }
-
-main { max-width: 1080px; margin: 0 auto; padding: 1rem 2.5rem 3rem; }
-
-/* ---------- Buttons ---------- */
-.btn {
-  display: inline-flex; align-items: center; justify-content: center;
-  padding: 0.85rem 1.6rem; border-radius: 999px; text-decoration: none;
-  font-weight: 700; font-size: 0.98rem; border: none; cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease;
-}
-.btn-primary { background: var(--orange); color: white; box-shadow: 0 8px 20px -8px rgba(239, 106, 51, 0.55); }
-.btn-primary:hover { background: var(--orange-dark); transform: translateY(-1px); }
-.btn-secondary { background: transparent; color: var(--navy); border: 1.5px solid var(--border); }
-.btn-secondary:hover { border-color: var(--navy); }
-.btn-block { width: 100%; }
-
-/* ---------- Hero ---------- */
-.hero {
-  display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 3rem;
-  align-items: center; padding: 3rem 0 4rem;
-}
-.eyebrow {
-  font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
-  color: var(--orange-dark); margin-bottom: 0.6rem;
-}
-.lede { color: var(--muted); font-size: 1.08rem; max-width: 480px; }
-.lede.small { font-size: 0.98rem; }
-.hero-actions { display: flex; flex-direction: column; gap: 0.6rem; align-items: flex-start; margin-top: 1.2rem; }
-.hero-note { color: var(--muted); font-size: 0.85rem; }
-
-/* ---------- Hero mock email ---------- */
-.hero-visual { display: flex; justify-content: center; }
-.mock-email {
-  background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
-  width: 100%; max-width: 380px; overflow: hidden; border: 1px solid var(--border-soft);
-  transform: rotate(1.2deg);
-}
-.mock-email-header {
-  display: flex; align-items: center; gap: 6px; padding: 0.7rem 1rem;
-  background: var(--navy-dark);
-}
-.mock-dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.25); }
-.mock-email-title { color: rgba(255,255,255,0.75); font-size: 0.78rem; margin-left: 0.4rem; }
-.mock-email-meta { padding: 0.7rem 1.2rem 0; font-size: 0.82rem; color: var(--muted); }
-.mock-email-meta p { margin: 0 0 0.2rem; }
-.mock-email-body { padding: 1.1rem 1.2rem 1.3rem; }
-.mock-email-subject { font-family: var(--font-head); font-weight: 700; font-size: 1.02rem; color: var(--navy-dark); margin-bottom: 0.7rem; }
-.mock-email-line { font-size: 0.92rem; margin-bottom: 0.6rem; }
-.mock-email-line.muted { color: var(--muted); font-size: 0.85rem; }
-.mock-application {
-  background: var(--cream); border: 1px solid var(--border-soft); border-radius: var(--radius-sm);
-  padding: 0.6rem 0.8rem; margin-bottom: 0.6rem;
-}
-.mock-app-address { font-weight: 700; font-size: 0.88rem; margin: 0 0 0.15rem; }
-.mock-app-desc { font-size: 0.84rem; color: var(--muted); margin: 0; }
-.mock-email-text {
-  white-space: pre-wrap; font-family: var(--font-body); font-size: 0.88rem; color: var(--ink);
-  background: transparent; margin: 0;
-}
-.mock-email-full { transform: none; max-width: 640px; margin: 1.2rem 0; }
-
-/* ---------- How it works ---------- */
-.how { padding: 2.5rem 0; text-align: center; }
-.how h2 { margin-bottom: 2rem; }
-.how-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
-.how-step {
-  background: var(--card); border: 1px solid var(--border-soft); border-radius: var(--radius);
-  padding: 1.6rem 1.3rem; box-shadow: var(--shadow-sm); text-align: left;
-}
-.how-icon {
-  width: 42px; height: 42px; border-radius: 10px; background: rgba(239, 106, 51, 0.12);
-  color: var(--orange-dark); display: flex; align-items: center; justify-content: center;
-  margin-bottom: 0.9rem;
-}
-.how-icon svg { width: 22px; height: 22px; }
-.how-step p { color: var(--muted); font-size: 0.92rem; margin: 0; }
-
-/* ---------- CTA band ---------- */
-.cta-band {
-  background: var(--navy-dark); color: white; border-radius: var(--radius);
-  padding: 2.8rem 2rem; text-align: center; margin: 2rem 0 1rem;
-}
-.cta-band h2 { color: white; margin-bottom: 1.3rem; }
-
-/* ---------- Footer ---------- */
-.footer { padding: 2rem 2.5rem 2.5rem; }
-.footer-inner { max-width: 1080px; margin: 0 auto; color: var(--muted); font-size: 0.82rem; text-align: center; }
-.footer-inner p { margin: 0.2rem 0; }
-.footer a { color: var(--muted); text-decoration: underline; }
-
-/* ---------- Forms ---------- */
-.card { background: var(--card); border: 1px solid var(--border-soft); border-radius: var(--radius); padding: 1.6rem; box-shadow: var(--shadow-sm); }
-.form { display: flex; flex-direction: column; gap: 1.15rem; }
-.form label { display: flex; flex-direction: column; font-size: 0.9rem; font-weight: 600; gap: 0.4rem; color: var(--navy-dark); }
-.form .hint { font-weight: 400; color: var(--muted); font-size: 0.82rem; }
-.form input[type=text], .form input[type=email] {
-  padding: 0.7rem 0.85rem; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
-  font-size: 1rem; font-family: var(--font-body); background: var(--cream);
-}
-.form input[type=text]:focus, .form input[type=email]:focus { outline: none; border-color: var(--orange); background: white; }
-.range-row { display: flex; align-items: center; gap: 0.8rem; }
-.range-row input[type=range] { flex: 1; accent-color: var(--orange); }
-.range-value { font-weight: 700; color: var(--navy-dark); min-width: 3.2rem; text-align: right; }
-fieldset { border: none; padding: 0; margin: 0; }
-fieldset legend { font-size: 0.9rem; font-weight: 600; color: var(--navy-dark); padding: 0; margin-bottom: 0.5rem; }
-.checkbox-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.checkbox-pill {
-  display: flex; align-items: center; gap: 0.4rem; font-weight: 500; font-size: 0.86rem;
-  background: var(--cream); border: 1.5px solid var(--border); border-radius: 999px;
-  padding: 0.45rem 0.9rem; cursor: pointer; color: var(--ink);
-}
-.checkbox-pill:has(input:checked) { background: rgba(239, 106, 51, 0.12); border-color: var(--orange); color: var(--orange-dark); }
-.checkbox-pill input { accent-color: var(--orange); }
-
-/* ---------- Signup layout ---------- */
-.signup-layout { display: grid; grid-template-columns: 1.3fr 0.9fr; gap: 2.5rem; padding: 1.5rem 0 3rem; align-items: start; }
-.signup-side { display: flex; flex-direction: column; gap: 1rem; padding-top: 0.5rem; }
-.side-card { background: var(--card); border: 1px solid var(--border-soft); border-radius: var(--radius); padding: 1.3rem; box-shadow: var(--shadow-sm); }
-.side-card.muted-card { background: rgba(20, 48, 77, 0.04); box-shadow: none; }
-.side-card.muted-card p { color: var(--muted); font-size: 0.88rem; margin: 0; }
-.side-steps { padding-left: 1.1rem; margin: 0; color: var(--muted); font-size: 0.9rem; }
-.side-steps li { margin-bottom: 0.5rem; }
-
-/* ---------- Preview page ---------- */
-.preview-layout { padding: 1.5rem 0 3rem; }
-.confirm-banner {
-  background: rgba(20, 48, 77, 0.05); border: 1px solid var(--border-soft); border-radius: var(--radius);
-  padding: 1.3rem 1.5rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;
-}
-.confirm-banner p { margin: 0; color: var(--navy-dark); font-size: 0.94rem; max-width: 420px; }
-
 /* ---------- Results page (search-first flow) ---------- */
-.results-list { display: flex; flex-direction: column; gap: 0.6rem; margin: 1.2rem 0; }
+/* A responsive grid rather than one long single-file column — auto-fill
+   collapses to a single column on narrow screens with no media query
+   needed, but on a normal desktop width this turns what used to be a tall
+   scrolling list into 2-3 columns, which is most of the fix for "lots of
+   scrolling" on the results, leads, and account pages (all three reuse
+   this same list/card pair). */
+.results-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.85rem;
+  margin: 1.2rem 0;
+  /* align-items left at its default (stretch) on purpose — so cards in
+     the same row match height and, on the leads page, the status
+     dropdown can pin to the bottom of each card via margin-top: auto
+     instead of floating right under a short description. */
+}
+/* .mock-application also appears inside the single-column hero email
+   mock on the homepage, where its own margin-bottom does the spacing —
+   only cancel that here, where the grid's gap already spaces things out
+   (previously both applied at once, doubling the gap between cards). */
+.results-list .mock-application { margin-bottom: 0; }
 .subscribe-card { margin-top: 1.5rem; max-width: 420px; }
 
 /* ---------- Stage badges + leads dashboard ---------- */
@@ -196,38 +28,20 @@ fieldset legend { font-size: 0.9rem; font-weight: 600; color: var(--navy-dark); 
   letter-spacing: 0.04em; padding: 0.2rem 0.55rem; border-radius: 999px; margin-bottom: 0.4rem;
 }
 .stage-approved { background: rgba(239, 106, 51, 0.15); color: var(--orange-dark); }
-.lead-row { display: flex; flex-direction: column; gap: 0.3rem; position: relative; }
-.lead-status-form { margin-top: 0.4rem; }
+.lead-row { display: flex; flex-direction: column; gap: 0.3rem; position: relative; height: 100%; }
+.lead-status-form { margin-top: auto; padding-top: 0.4rem; }
 .lead-status-form select {
   padding: 0.35rem 0.6rem; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
   font-family: var(--font-body); font-size: 0.85rem; background: white;
 }
 
-/* ---------- Search progress overlay ---------- */
-.search-progress-overlay {
-  position: fixed; inset: 0; background: rgba(11, 31, 51, 0.94); color: white;
-  display: none; align-items: center; justify-content: center; flex-direction: column;
-  gap: 1.2rem; z-index: 1000; text-align: center; padding: 2rem;
+/* ---------- Leads filter bar ---------- */
+.lead-filters { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.9rem 0 1.3rem; }
+.filter-pill {
+  display: inline-flex; align-items: center; gap: 0.3rem; font-weight: 600; font-size: 0.85rem;
+  background: var(--cream); border: 1.5px solid var(--border); border-radius: 999px;
+  padding: 0.45rem 0.95rem; cursor: pointer; color: var(--ink); font-family: var(--font-body);
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
-.search-progress-overlay.active { display: flex; }
-.search-spinner {
-  width: 46px; height: 46px; border-radius: 50%;
-  border: 4px solid rgba(255, 255, 255, 0.22); border-top-color: var(--orange);
-  animation: search-spin 0.9s linear infinite;
-}
-@keyframes search-spin { to { transform: rotate(360deg); } }
-.search-progress-text {
-  font-family: var(--font-head); font-size: 1.1rem; font-weight: 600; max-width: 320px;
-}
-
-/* ---------- Responsive ---------- */
-@media (max-width: 820px) {
-  .topbar { padding: 1rem 1.3rem; }
-  main { padding: 1rem 1.3rem 2.5rem; }
-  .hero { grid-template-columns: 1fr; padding: 2rem 0; }
-  .hero-visual { order: -1; }
-  .mock-email { transform: none; max-width: 440px; }
-  .how-steps { grid-template-columns: 1fr; }
-  .signup-layout { grid-template-columns: 1fr; }
-  .cta-band { padding: 2rem 1.3rem; }
-}
+.filter-pill:hover { border-color: var(--navy); }
+.filter-pill.active { background: rgba(239, 106, 51, 0.12); border-color: var(--orange); color: var(--orange-dark); }
