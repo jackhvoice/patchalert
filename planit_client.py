@@ -33,14 +33,26 @@ bundled sample response in fixtures/sample_planit_response.json instead.
 """
 
 import json
+import logging
 import os
 from pathlib import Path
 
 import requests
 
+logger = logging.getLogger(__name__)
+
 API_BASE = "https://www.planit.org.uk/api/applics/json"
 GEOCODE_BASE = "https://api.postcodes.io/postcodes"
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "sample_planit_response.json"
+
+# Known-safe field list — this exact string has been running in production
+# without issue. "app_size" is a newer, less-proven addition (added to
+# support a "skip large developments" filter) — see the safe-select retry
+# in fetch_applications() below for what happens if it turns out not to
+# map to a real column, the same way "agent_name" didn't (see the NOTE
+# further down).
+BASE_SELECT_FIELDS = "uid,area_name,start_date,address,description,link,app_state,decided_date"
+EXTENDED_SELECT_FIELDS = BASE_SELECT_FIELDS + ",app_size"
 
 
 def _normalize_postcode(postcode: str) -> str:
@@ -79,6 +91,26 @@ def _matches_keywords(record: dict, terms: list) -> bool:
     return any(term in text for term in terms)
 
 
+_VALID_SIZES = {"small", "medium", "large"}
+
+
+def matches_size(record: dict, allowed_sizes) -> bool:
+    """True if this record's app_size falls within allowed_sizes (a set of
+    lowercase 'small'/'medium'/'large' strings), OR if app_size is missing
+    or an unrecognised value. Defensive by design, same spirit as
+    stage_of() below it: someone who's narrowed their alert to "small
+    jobs only" should still see a real lead PlanIt just didn't tag a size
+    for, rather than it silently vanishing because of a data gap on
+    PlanIt's side rather than an actual mismatch. Passing a falsy
+    allowed_sizes (None or empty) means "no filter" — everything matches."""
+    if not allowed_sizes:
+        return True
+    size = (record.get("app_size") or "").strip().lower()
+    if size not in _VALID_SIZES:
+        return True
+    return size in allowed_sizes
+
+
 # PlanIt's own decision-stage field name is not confirmed against a live
 # response in this build environment (see the module docstring's "NOTE ON
 # SANDBOX TESTING" — no outbound internet access here). "app_state" and
@@ -112,13 +144,15 @@ def fetch_applications(
     recent_days: int = 7,
     page_size: int = 100,
     use_fixture: bool | None = None,
+    sizes=None,
 ) -> list[dict]:
     """
     Fetch planning applications near a postcode, optionally filtered by a
     keyword match against the application description (e.g. "extension",
-    "loft conversion", "garage conversion"). Matching is done locally in
-    Python, not via the remote API's own search syntax — see module
-    docstring for why.
+    "loft conversion", "garage conversion") and/or a development-size
+    filter (sizes: a set like {"small", "medium"}, or None for no filter).
+    Matching is done locally in Python, not via the remote API's own
+    search syntax — see module docstring for why.
 
     Returns a list of raw record dicts as provided by the PlanIt API.
     """
@@ -133,52 +167,61 @@ def fetch_applications(
         records = data["records"]
         if terms:
             records = [r for r in records if _matches_keywords(r, terms)]
+        if sizes:
+            records = [r for r in records if matches_size(r, sizes)]
         for r in records:
             r["_stage"] = stage_of(r)
         return records
 
     lat, lng = geocode_postcode(postcode)
 
-    params = {
-        "lat": lat,
-        "lng": lng,
-        "krad": radius_km,
-        "recent": recent_days,
-        "pg_sz": page_size,
-        # Ask PlanIt for only the fields we actually use — a smaller
-        # response is faster for them to build and for us to receive,
-        # which helps avoid the read timeout a full-fat response can hit.
-        # app_state/decided_date power the "just approved" feature in
-        # digest.py — see stage_of() above for why these are handled
-        # defensively if the names turn out to differ.
-        #
-        # NOTE: "agent_name" was in this list originally but a live
-        # production request confirmed PlanIt's real API rejects it
-        # outright with a 400 ("column pgrst_call.agent_name does not
-        # exist") rather than just omitting it — unlike an unrecognised
-        # *value* (handled defensively elsewhere), an unrecognised
-        # *field name* here breaks the entire request, so it's removed.
-        # This means the "Agent/architect" line in digest.py's email
-        # rendering will never populate against real data (only in the
-        # bundled fixture, which does include it) — the code already
-        # handles that gracefully since it's only shown when present, but
-        # it's a feature that quietly won't do anything for real
-        # subscribers unless a correct field name is found later.
-        "select": "uid,area_name,start_date,address,description,link,app_state,decided_date",
-    }
-
     headers = {
         "User-Agent": "PatchAlertBot/1.0 (+https://patchalert.onrender.com)",
         "Accept": "application/json",
     }
-    # PlanIt's own docs note queries can legitimately take up to ~45s before
-    # PlanIt itself errors out (confirmed in production: a broad lat/lng
-    # search took 36s). Nobody is watching a live spinner for the background
-    # daily digest job, so it's better to wait it out than give up early —
-    # the preview page stays fast by searching a much smaller area/window
-    # (see build_digest_for_subscriber's preview flag in digest.py), not by
-    # cutting this timeout short.
-    resp = requests.get(API_BASE, params=params, headers=headers, timeout=55)
+
+    def _query(select_fields):
+        params = {
+            "lat": lat,
+            "lng": lng,
+            "krad": radius_km,
+            "recent": recent_days,
+            "pg_sz": page_size,
+            # Ask PlanIt for only the fields we actually use — a smaller
+            # response is faster for them to build and for us to receive,
+            # which helps avoid the read timeout a full-fat response can
+            # hit. app_state/decided_date power the "just approved"
+            # feature in digest.py — see stage_of() above for why these
+            # are handled defensively if the names turn out to differ.
+            "select": select_fields,
+        }
+        # PlanIt's own docs note queries can legitimately take up to ~45s
+        # before PlanIt itself errors out (confirmed in production: a
+        # broad lat/lng search took 36s). Nobody is watching a live
+        # spinner for the background daily digest job, so it's better to
+        # wait it out than give up early — the preview page stays fast by
+        # searching a much smaller area/window (see
+        # build_digest_for_subscriber's preview flag in digest.py), not
+        # by cutting this timeout short.
+        return requests.get(API_BASE, params=params, headers=headers, timeout=55)
+
+    resp = _query(EXTENDED_SELECT_FIELDS)
+    if resp.status_code == 400 and "does not exist" in resp.text:
+        # Same failure mode as the "agent_name" incident: a field in
+        # `select` doesn't map to a real PlanIt column, and an
+        # unrecognised *field name* here breaks the entire request
+        # (unlike an unrecognised *value*, which is handled defensively
+        # elsewhere). Retry once with the known-safe field list instead
+        # of taking the whole search down — "app_size" just won't be
+        # available this run, and matches_size() above already treats a
+        # missing app_size as "show it anyway" rather than silently
+        # filtering someone's real leads to nothing.
+        logger.warning(
+            "PlanIt rejected the extended select field list — retrying with "
+            "the known-safe list. Response: %s", resp.text[:300]
+        )
+        resp = _query(BASE_SELECT_FIELDS)
+
     try:
         resp.raise_for_status()
     except requests.exceptions.HTTPError as exc:
@@ -192,6 +235,8 @@ def fetch_applications(
     records = resp.json().get("records", [])
     if terms:
         records = [r for r in records if _matches_keywords(r, terms)]
+    if sizes:
+        records = [r for r in records if matches_size(r, sizes)]
     for r in records:
         r["_stage"] = stage_of(r)
     return records
