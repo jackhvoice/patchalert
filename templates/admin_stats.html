@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Stats — PatchAlert{% endblock %}
+{% block robots_meta %}noindex, nofollow{% endblock %}
+{% block content %}
+<section class="preview-layout">
+  <h1>Signups &amp; subscribers</h1>
+  <p class="lede small">Private numbers page — not linked anywhere on the site, only reachable with
+     your secret link. Bookmark this page rather than sharing the link around.</p>
+
+  <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin: 1.5rem 0;">
+    <div class="card" style="flex: 1; min-width: 160px;">
+      <p class="lede small" style="margin: 0 0 0.4rem; color: var(--muted);">Total subscribers</p>
+      <p style="margin: 0; font-size: 2rem; font-weight: 800; color: var(--navy-dark);">{{ stats.total }}</p>
+    </div>
+    <div class="card" style="flex: 1; min-width: 160px;">
+      <p class="lede small" style="margin: 0 0 0.4rem; color: var(--muted);">New in last 7 days</p>
+      <p style="margin: 0; font-size: 2rem; font-weight: 800; color: var(--navy-dark);">{{ stats.signups_7d }}</p>
+    </div>
+    <div class="card" style="flex: 1; min-width: 160px;">
+      <p class="lede small" style="margin: 0 0 0.4rem; color: var(--muted);">New in last 30 days</p>
+      <p style="margin: 0; font-size: 2rem; font-weight: 800; color: var(--navy-dark);">{{ stats.signups_30d }}</p>
+    </div>
+    <div class="card" style="flex: 1; min-width: 160px;">
+      <p class="lede small" style="margin: 0 0 0.4rem; color: var(--muted);">From referrals</p>
+      <p style="margin: 0; font-size: 2rem; font-weight: 800; color: var(--navy-dark);">{{ stats.referred_count }}</p>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 220px;">
+      <h3>By plan</h3>
+      <div class="results-list">
+        {% for plan, count in stats.by_plan.items() %}
+          <div class="mock-application">
+            <p class="mock-app-address">{{ plan|capitalize }}</p>
+            <p class="mock-app-desc">{{ count }} subscriber{{ 's' if count != 1 else '' }}</p>
+          </div>
+        {% else %}
+          <p class="lede small">No subscribers yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div style="flex: 1; min-width: 220px;">
+      <h3>By status</h3>
+      <div class="results-list">
+        {% for status, count in stats.by_status.items() %}
+          <div class="mock-application">
+            <p class="mock-app-address">{{ status|capitalize }}</p>
+            <p class="mock-app-desc">{{ count }} subscriber{{ 's' if count != 1 else '' }}</p>
+          </div>
+        {% else %}
+          <p class="lede small">No subscribers yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 1.5rem;">Signups per day (last 14 days)</h3>
+  <div style="display: flex; align-items: flex-end; gap: 6px; height: 130px; margin: 1rem 0; padding: 0.75rem 0.5rem 0.5rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm);">
+    {% for day, count in stats.daily_counts.items() %}
+      <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%;" title="{{ day }}: {{ count }} signup{{ 's' if count != 1 else '' }}">
+        <span style="font-size: 0.7rem; color: var(--navy-dark); font-weight: 700; min-height: 1em;">{{ count if count else '' }}</span>
+        <div style="width: 100%; max-width: 26px; background: var(--orange); border-radius: 3px 3px 0 0; height: {{ ((count / stats.max_daily_count * 80)|round|int) if stats.max_daily_count else 0 }}px; min-height: {{ '4px' if count else '2px' }}; background: {{ 'var(--orange)' if count else 'var(--border)' }};"></div>
+        <span style="font-size: 0.65rem; color: var(--muted); margin-top: 4px;">{{ day[8:10] }}/{{ day[5:7] }}</span>
+      </div>
+    {% endfor %}
+  </div>
+
+  <h3 style="margin-top: 1.5rem;">Most recent signups</h3>
+  <div class="results-list">
+    {% for r in stats.recent %}
+      <div class="mock-application">
+        <p class="mock-app-address">{{ r.name }} <span class="hint">({{ r.email }})</span></p>
+        <p class="mock-app-desc">{{ r.postcode }} &middot; {{ (r.plan or 'basic')|capitalize }} &middot;
+           {{ (r.subscription_status or 'trial')|capitalize }} &middot; {{ r.created_at }}</p>
+      </div>
+    {% else %}
+      <p class="lede small">No signups yet.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
