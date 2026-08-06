@@ -304,6 +304,71 @@ def get_all_subscribers() -> list:
     return rows
 
 
+def get_subscriber_stats() -> dict:
+    """Aggregate signup numbers for the private /admin/stats page — total
+    subscribers, plan/status breakdown, and a day-by-day signup trend.
+
+    Deliberately includes unsubscribed people too (unlike
+    get_all_subscribers()) since "how many have ever signed up" is a
+    different, still-useful number from "how many are we actively
+    emailing today". The counting itself is done here in Python rather
+    than with backend-specific SQL (e.g. Postgres's DATE_TRUNC vs SQLite's
+    strftime) so it behaves identically on both — subscriber counts aren't
+    remotely large enough yet for that to matter for performance."""
+    conn = get_conn()
+    cur = _exec(
+        conn,
+        "SELECT name, email, postcode, plan, subscription_status, created_at, referred_by "
+        "FROM subscribers ORDER BY created_at DESC",
+    )
+    rows = [dict(r) for r in cur.fetchall()]
+    conn.close()
+
+    now = datetime.utcnow()
+    by_plan, by_status = {}, {}
+    signups_7d = signups_30d = referred_count = 0
+
+    for r in rows:
+        plan = r.get("plan") or "basic"
+        status = r.get("subscription_status") or "trial"
+        by_plan[plan] = by_plan.get(plan, 0) + 1
+        by_status[status] = by_status.get(status, 0) + 1
+        if r.get("referred_by"):
+            referred_count += 1
+        created = parse_timestamp(r.get("created_at"))
+        if created:
+            age_days = (now - created).days
+            if age_days < 7:
+                signups_7d += 1
+            if age_days < 30:
+                signups_30d += 1
+
+    # Signups per day for the last 14 days, oldest first — a simple trend
+    # view without needing a charting library.
+    daily_counts = {}
+    for i in range(13, -1, -1):
+        day = (now - timedelta(days=i)).strftime("%Y-%m-%d")
+        daily_counts[day] = 0
+    for r in rows:
+        created = parse_timestamp(r.get("created_at"))
+        if created:
+            day = created.strftime("%Y-%m-%d")
+            if day in daily_counts:
+                daily_counts[day] += 1
+
+    return {
+        "total": len(rows),
+        "by_plan": by_plan,
+        "by_status": by_status,
+        "signups_7d": signups_7d,
+        "signups_30d": signups_30d,
+        "referred_count": referred_count,
+        "daily_counts": daily_counts,
+        "max_daily_count": max(daily_counts.values()) if daily_counts else 0,
+        "recent": rows[:25],
+    }
+
+
 def get_subscriber(subscriber_id) -> dict | None:
     conn = get_conn()
     cur = _exec(conn, "SELECT * FROM subscribers WHERE id = ?", (subscriber_id,))
