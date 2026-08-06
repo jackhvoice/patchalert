@@ -18,6 +18,10 @@ db.init_db()
 
 DIGEST_TRIGGER_SECRET = os.environ.get("DIGEST_TRIGGER_SECRET")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET")
+# Reuses DIGEST_TRIGGER_SECRET by default so /admin/stats works immediately
+# with zero extra setup — set a separate ADMIN_STATS_TOKEN env var instead
+# if you'd rather this page use its own secret.
+ADMIN_STATS_TOKEN = os.environ.get("ADMIN_STATS_TOKEN") or DIGEST_TRIGGER_SECRET
 
 # Broader than a single word per trade on purpose — real planning
 # descriptions are inconsistently worded ("erection of two storey rear
@@ -98,6 +102,7 @@ def robots_txt():
         "Disallow: /run-digest",
         "Disallow: /stripe/webhook",
         "Disallow: /billing/",
+        "Disallow: /admin/",
         f"Sitemap: {base}/sitemap.xml",
         "",
     ]
@@ -478,6 +483,26 @@ def run_digest_endpoint():
         return jsonify({"error": "unauthorized"}), 403
     summary = run_daily_digest()
     return jsonify({"ok": True, "results": summary})
+
+
+@app.route("/admin/stats")
+def admin_stats():
+    """
+    A private numbers page — total subscribers, plan/status breakdown, a
+    signups-per-day trend, and your most recent signups — so you can see
+    how PatchAlert is growing without needing to open the database
+    directly. Not linked from anywhere on the site and marked noindex, and
+    protected by the same shared-secret pattern as /run-digest (reuses
+    DIGEST_TRIGGER_SECRET by default, so there's nothing new to configure):
+        https://your-app-url/admin/stats?token=YOUR_SECRET
+    """
+    if not ADMIN_STATS_TOKEN:
+        return jsonify({"error": "Set DIGEST_TRIGGER_SECRET or ADMIN_STATS_TOKEN to use this page"}), 503
+    token = request.args.get("token")
+    if token != ADMIN_STATS_TOKEN:
+        return jsonify({"error": "unauthorized"}), 403
+    stats = db.get_subscriber_stats()
+    return render_template("admin_stats.html", stats=stats)
 
 
 if __name__ == "__main__":
