@@ -120,6 +120,7 @@ def sitemap_xml():
         ("/signup", "0.9", "weekly"),
         ("/pricing", "0.7", "monthly"),
         ("/guides/planning-application-leads", "0.6", "monthly"),
+        ("/guides/loft-conversion-leads", "0.6", "monthly"),
         ("/privacy", "0.2", "yearly"),
         ("/terms", "0.2", "yearly"),
     ]
@@ -152,6 +153,11 @@ def terms():
 @app.route("/guides/planning-application-leads")
 def guide_planning_leads():
     return render_template("guide_planning_leads.html", trial_days=TRIAL_DAYS)
+
+
+@app.route("/guides/loft-conversion-leads")
+def guide_loft_conversion_leads():
+    return render_template("guide_loft_conversion_leads.html", trial_days=TRIAL_DAYS)
 
 
 @app.route("/signup", methods=["GET", "POST"])
