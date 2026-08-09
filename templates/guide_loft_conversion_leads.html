@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Loft Conversion Leads From Planning Applications | PatchAlert{% endblock %}
+{% block meta_description %}How to find loft conversion leads from public UK planning application data, and why that's different from paying per-lead through a shared lead-generation service.{% endblock %}
+{% block structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Do all loft conversions need planning permission?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Many straightforward roof-light-only loft conversions fall under permitted development and never reach a council planning portal. Conversions involving a dormer, a mansard roof, work in a conservation area, or flats generally do need planning permission, which is why dormer loft conversions in particular show up well in planning application data."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How is this different from a paid lead-generation service?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Many loft conversion lead services sell the same enquiry to several builders at once, and charge per lead regardless of whether it converts. Planning application data is public record, free to access, and not sold or shared as a matched lead — PatchAlert just tells you what's been submitted or approved so you can decide how to follow up."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How much does PatchAlert cost?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Plans start at £4.99/month, with a free trial and no card required to start."
+      }
+    }
+  ]
+}
+</script>
+{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <div class="hero-copy">
+    <p class="eyebrow">For loft conversion specialists</p>
+    <h1>How to get loft conversion leads from planning applications</h1>
+    <p class="lede">A dormer loft conversion almost always needs planning permission — which means
+       it's public record the moment it's submitted, weeks before the homeowner starts collecting
+       quotes from builders.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="{{ url_for('signup') }}">Set up my free alert</a>
+      <span class="hero-note">Free for your first {{ trial_days }} days · No card required</span>
+    </div>
+  </div>
+</section>
+
+<section class="preview-layout">
+  <h3>Not every loft conversion shows up — here's which ones do</h3>
+  <p>Worth being upfront about this: a simple roof-light-only loft conversion, with no change to the
+     roof shape, often falls under permitted development and never touches a council planning
+     portal. But a dormer conversion — by far the most common way to get proper head height and the
+     most valuable type of job — usually does need planning permission, as does anything in a
+     conservation area, on a flat, or that adds a mansard roof. That's the segment planning
+     application data is genuinely good at surfacing: the bigger, higher-value loft jobs, early.</p>
+
+  <h3>The usual way loft conversion leads get sold</h3>
+  <p>Search around and most of what you'll find calling itself "loft conversion leads" is a paid
+     lead-generation service: you pay a fee — often somewhere in the £20–60 range per lead — for an
+     enquiry that was frequently sent to two or three other builders at the same time. You're paying
+     whether or not it turns into a job, and you're often competing with people who got the same
+     lead five minutes before you did.</p>
+  <p>Planning application data is a different kind of signal entirely. It's public record, free for
+     anyone to look up, and nobody's selling it to you as an exclusive match — because it isn't one.
+     What PatchAlert does is just remove the manual work of checking for it: one daily email with new
+     or newly-approved loft conversion applications on your patch, so you're not paying per enquiry
+     or waiting in a queue with other builders who bought the same one.</p>
+
+  <h3>How PatchAlert works</h3>
+  <div class="how-steps">
+    <div class="how-step">
+      <div class="how-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-7.58 7-12.5A7 7 0 0 0 5 9.5C5 14.42 12 22 12 22Z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+      </div>
+      <h3>1. Pick your patch</h3>
+      <p>Your postcode and a radius. Only jobs near you, nothing else.</p>
+    </div>
+    <div class="how-step">
+      <div class="how-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.3 2.3-2-2 2.3-2.3Z"/></svg>
+      </div>
+      <h3>2. Pick loft conversions</h3>
+      <p>Or add extensions, garage conversions and conservatories too — your call.</p>
+    </div>
+    <div class="how-step">
+      <div class="how-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+      </div>
+      <h3>3. Get the email</h3>
+      <p>New applications daily, plus a flag the moment one gets approved.</p>
+    </div>
+  </div>
+
+  <h3>Frequently asked questions</h3>
+  <p><strong>Do all loft conversions need planning permission?</strong><br>
+     No. Many roof-light-only conversions fall under permitted development and never reach a
+     planning portal. Dormer conversions, mansard roofs, conservation areas and flats generally do
+     need permission — which is why dormer loft conversions in particular show up well in planning
+     application data.</p>
+  <p><strong>How is this different from a paid lead-generation service?</strong><br>
+     Many loft conversion lead services sell the same enquiry to several builders at once and charge
+     per lead regardless of outcome. Planning application data is public record, free to access, and
+     not sold to you as a matched lead — PatchAlert just tells you what's out there.</p>
+  <p><strong>How much does PatchAlert cost?</strong><br>
+     Plans start at £4.99/month, with a free {{ trial_days }}-day trial and no card required to
+     start. See the <a href="{{ url_for('pricing') }}">pricing page</a> for details.</p>
+</section>
+
+<section class="cta-band">
+  <h2>Set up your first alert in under a minute.</h2>
+  <a class="btn btn-primary" href="{{ url_for('signup') }}">Set up my free alert</a>
+</section>
+
+{% endblock %}
