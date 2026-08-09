@@ -148,6 +148,13 @@ def terms():
     return render_template("terms.html")
 
 
+@app.route("/guides/planning-application-leads")
+def guide_planning_leads():
+    return render_template("guide_planning_leads.html", trial_days=TRIAL_DAYS)
+
+
+@app.route("/signup", methods=["GET", "POST"])
+
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     """
