@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Planning Application Leads for UK Builders — How It Works | PatchAlert{% endblock %}
+{% block meta_description %}How builders, extension and loft conversion specialists use UK planning application data to find work before it hits the lead sites — and how to set up alerts for your own patch.{% endblock %}
+{% block structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Is UK planning application data public?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Every planning application submitted to a UK local council is public record, published on that council's own planning portal. PatchAlert doesn't have access to anything you couldn't find yourself — it just checks every relevant council for you automatically."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How much does PatchAlert cost?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Plans start at £4.99/month, with a free trial and no card required to start."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does PatchAlert cover my area?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "PatchAlert covers the whole of the UK, not just London or a handful of boroughs, since it's built on national planning application data rather than a manually curated regional list."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How is this different from buying leads or paying for letter campaigns?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "PatchAlert doesn't sell contact lists or run mailing campaigns on your behalf. It's a simple daily email telling you what's been submitted or approved on your patch, matching your trade, so you can decide how to follow up yourself — no per-lead or per-letter fees."
+      }
+    }
+  ]
+}
+</script>
+{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <div class="hero-copy">
+    <p class="eyebrow">For builders, extension &amp; loft conversion specialists</p>
+    <h1>How to get planning application leads before anyone else</h1>
+    <p class="lede">Every extension, loft conversion and garage conversion job starts the same way — a
+       homeowner submits a planning application to their local council. It's public record the moment
+       it's filed. The trades who see it first get the first conversation.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="{{ url_for('signup') }}">Set up my free alert</a>
+      <span class="hero-note">Free for your first {{ trial_days }} days · No card required</span>
+    </div>
+  </div>
+</section>
+
+<section class="preview-layout">
+  <h3>Why planning applications are the earliest signal of new work</h3>
+  <p>By the time a job shows up on a lead site or the homeowner starts posting in a local Facebook
+     group, they've usually already had two or three builders round for quotes. A planning
+     application is earlier than that — often weeks earlier. It's the point where the project has
+     gone from "thinking about it" to "committed enough to file paperwork," but before most trades
+     even know it exists. Getting in touch at that stage, or the moment it's approved, is the whole
+     advantage.</p>
+
+  <h3>How to check for new planning applications yourself</h3>
+  <p>There's no single national list you can search — each of England, Scotland, Wales and Northern
+     Ireland's local councils runs its own planning portal, with its own search tools and its own
+     way of describing things. If you want to do this manually, it looks like: work out which
+     councils cover your patch, bookmark each of their weekly or daily lists, open each one, and
+     read through the descriptions looking for extension, loft conversion, or garage conversion work
+     buried among everything else — barn conversions, tree work, shopfronts, listed building consent,
+     all mixed together.</p>
+  <p>That's manageable for a single council if you're disciplined about checking it. It stops being
+     manageable once your patch spans two, three, or more council boundaries, which most builders'
+     realistic working area does.</p>
+
+  <h3>The options if you'd rather not do that by hand</h3>
+  <p>A few services exist to solve this for builders. Broadly, they fall into two camps: pay-per-lead
+     or pay-per-letter tools that charge each time you act on a lead, and regional data subscriptions
+     — often priced by borough or council area — that hand you a spreadsheet export with contact
+     details, typically running from around £50 to well over £150 a month depending on how much
+     coverage you need.</p>
+  <p>PatchAlert takes a simpler approach: one plain email a day, telling you what's new or newly
+     approved on your patch, for your trade. No per-lead charges, no borough-by-borough pricing, no
+     dashboard to log into — it lands in your inbox like a message from a mate, from £4.99/month.</p>
+
+  <h3>How PatchAlert works</h3>
+  <div class="how-steps">
+    <div class="how-step">
+      <div class="how-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-7.58 7-12.5A7 7 0 0 0 5 9.5C5 14.42 12 22 12 22Z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+      </div>
+      <h3>1. Pick your patch</h3>
+      <p>Your postcode and a radius. Only jobs near you, nothing else.</p>
+    </div>
+    <div class="how-step">
+      <div class="how-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.3 2.3-2-2 2.3-2.3Z"/></svg>
+      </div>
+      <h3>2. Pick your trade</h3>
+      <p>Extensions, loft conversions, garage conversions, conservatories — your call.</p>
+    </div>
+    <div class="how-step">
+      <div class="how-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+      </div>
+      <h3>3. Get the email</h3>
+      <p>New applications daily, plus a flag the moment one gets approved.</p>
+    </div>
+  </div>
+
+  <h3>Frequently asked questions</h3>
+  <p><strong>Is UK planning application data public?</strong><br>
+     Yes. Every planning application is public record, published on the relevant council's own
+     planning portal. PatchAlert doesn't have access to anything you couldn't find yourself — it
+     just checks every relevant council for you automatically.</p>
+  <p><strong>How much does PatchAlert cost?</strong><br>
+     Plans start at £4.99/month, with a free {{ trial_days }}-day trial and no card required to
+     start. See the <a href="{{ url_for('pricing') }}">pricing page</a> for details.</p>
+  <p><strong>Does PatchAlert cover my area?</strong><br>
+     PatchAlert covers the whole of the UK, not just London or a handful of boroughs.</p>
+  <p><strong>How is this different from buying leads or paying for letter campaigns?</strong><br>
+     PatchAlert doesn't sell contact lists or run mailing campaigns for you. It's a daily email
+     telling you what's been submitted or approved on your patch, matching your trade — no per-lead
+     or per-letter fees. You decide how to follow up.</p>
+</section>
+
+<section class="cta-band">
+  <h2>Set up your first alert in under a minute.</h2>
+  <a class="btn btn-primary" href="{{ url_for('signup') }}">Set up my free alert</a>
+</section>
+
+{% endblock %}
