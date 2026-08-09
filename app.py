@@ -115,12 +115,14 @@ def sitemap_xml():
     # (path, priority, change frequency) — the homepage and signup/search
     # page are what we most want Google crawling often and ranking highest,
     # since those are the actual conversion pages.
-    entries = [
+        entries = [
         ("/", "1.0", "weekly"),
         ("/signup", "0.9", "weekly"),
         ("/pricing", "0.7", "monthly"),
+        ("/guides/planning-application-leads", "0.6", "monthly"),
         ("/privacy", "0.2", "yearly"),
         ("/terms", "0.2", "yearly"),
+    ]
     ]
     urls = "".join(
         f"<url><loc>{base}{path}</loc><changefreq>{freq}</changefreq><priority>{prio}</priority></url>"
